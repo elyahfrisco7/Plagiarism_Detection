@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Résultats de Recherche</title>
+  </head>
+  <body>
+    <h1>Mémoires Similaires</h1>
+    {% if results %}
+    <table border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Titre</th>
+          <th>Thème</th>
+          <th>Auteur</th>
+          <th>Université</th>
+          <th>Type</th>
+          <th>Lieu</th>
+          <th>Méthodologie</th>
+          <th>Résultats</th>
+          <th>Score de similarité (contenu)</th>
+          <th>PDF</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for res in results %}
+        <tr>
+          <td>{{ res.id }}</td>
+          <td>{{ res.title }}</td>
+          <td>{{ res.theme }}</td>
+          <td>{{ res.author }}</td>
+          <td>{{ res.university }}</td>
+          <td>{{ res.thesis_type }}</td>
+          <td>{{ res.stage_location }}</td>
+          <td>{{ res.methodology }}</td>
+          <td>{{ res.results }}</td>
+          <td>{{ res.content_score | round(2) }}</td>
+          <td>
+            <a
+              href="{{ url_for('uploaded_file', filename=res.pdf_path) }}"
+              target="_blank"
+              >Voir PDF</a
+            >
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>Aucun résultat trouvé.</p>
+    {% endif %}
+    <br />
+    <a href="/">Retour</a>
+  </body>
+</html>
