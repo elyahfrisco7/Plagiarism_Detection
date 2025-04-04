@@ -31,7 +31,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 # Configuration de la base de données MySQL
 # ------------------------------
 # Remplacez 'username', 'password', 'localhost' et 'thesis_db' par vos informations MySQL.
-DATABASE_URI = 'mysql+pymysql://username:password@localhost/thesis_db'
+DATABASE_URI = 'mysql+pymysql://root:@127.0.0.1:3306/thesis_db'
 engine = create_engine(DATABASE_URI, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
