@@ -2,14 +2,18 @@
 import os
 import json
 import numpy as np
+
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
+
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.orm import sessionmaker, declarative_base
+
 import PyPDF2
 from sentence_transformers import SentenceTransformer
-import chromadb
-from chromadb.config import Settings
+
+# Remplacer l'import de chromadb.Client(...) par PersistentClient
+from chromadb import PersistentClient
 
 # Pour l'extraction d'images depuis le PDF
 from pdf2image import convert_from_path
@@ -19,26 +23,25 @@ from PIL import Image
 import torch
 import clip
 
-# ------------------------------
+# ----------------------------------------------------------------------------
 # Configuration de Flask
-# ------------------------------
+# ----------------------------------------------------------------------------
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# ------------------------------
+# ----------------------------------------------------------------------------
 # Configuration de la base de données MySQL
-# ------------------------------
-# Remplacez 'username', 'password', 'localhost' et 'thesis_db' par vos informations MySQL.
+# ----------------------------------------------------------------------------
 DATABASE_URI = 'mysql+pymysql://root:@127.0.0.1:3306/thesis_db'
 engine = create_engine(DATABASE_URI, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# ------------------------------
+# ----------------------------------------------------------------------------
 # Modèle de données pour un mémoire (Thesis)
-# ------------------------------
+# ----------------------------------------------------------------------------
 class Thesis(Base):
     __tablename__ = 'theses'
     id = Column(Integer, primary_key=True, index=True)
@@ -47,10 +50,11 @@ class Thesis(Base):
     author = Column(String(255))
     university = Column(String(255))
     thesis_type = Column(String(50))      # "research" ou "professional"
-    stage_location = Column(String(255))    # Lieu de stage ou d'étude
+    stage_location = Column(String(255))  # Lieu de stage ou d'étude
     methodology = Column(Text)            # Méthodologie et objectifs
     results = Column(Text)                # Résultats (technologies, outils, etc.)
     pdf_path = Column(String(255))        # Nom du fichier PDF
+
     # Embeddings pour chaque critère (stockés sous forme de JSON)
     theme_embedding = Column(Text)
     stage_embedding = Column(Text)
@@ -59,29 +63,37 @@ class Thesis(Base):
     content_embedding = Column(Text)      # Embedding du contenu complet
     images_embedding = Column(Text)       # Embedding moyen des images
 
-# Création des tables dans la base
+# Création de la table `theses` si elle n'existe pas encore
 Base.metadata.create_all(bind=engine)
 
-# ------------------------------
+# ----------------------------------------------------------------------------
 # Chargement des modèles d'embeddings
-# ------------------------------
-# Pour le texte
+# ----------------------------------------------------------------------------
+# 1) SentenceTransformer pour le texte
 model = SentenceTransformer('all-MiniLM-L6-v2')
 embedding_dim = 384
 
-# Pour les images avec CLIP
+# 2) CLIP pour les images
 device = "cuda" if torch.cuda.is_available() else "cpu"
 clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
 
-# ------------------------------
-# Initialisation de ChromaDB pour le contenu complet
-# ------------------------------
-chroma_client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory="./chroma_db"))
-collection = chroma_client.get_or_create_collection(name="thesis_full_content")
+# ----------------------------------------------------------------------------
+# Initialisation de ChromaDB via PersistentClient
+# ----------------------------------------------------------------------------
+# Ce client stocke les embeddings dans le dossier ./chroma_db
+PERSIST_DIRECTORY = "./chroma_db"
+chroma_client = PersistentClient(path=PERSIST_DIRECTORY)
 
-# ------------------------------
+# Tenter de récupérer la collection "thesis_full_content"
+# Si elle n'existe pas, on la crée.
+try:
+    collection = chroma_client.get_collection("thesis_full_content")
+except:
+    collection = chroma_client.create_collection("thesis_full_content")
+
+# ----------------------------------------------------------------------------
 # Fonctions utilitaires
-# ------------------------------
+# ----------------------------------------------------------------------------
 
 def extract_text_from_pdf(pdf_filepath):
     """Extrait le texte complet d'un PDF à l'aide de PyPDF2."""
@@ -99,7 +111,7 @@ def extract_text_from_pdf(pdf_filepath):
 
 def extract_images_from_pdf(pdf_filepath):
     """
-    Extrait les images d'un PDF en convertissant chaque page en image.
+    Extrait les images d'un PDF en convertissant chaque page en image PIL via pdf2image.
     Retourne une liste d'objets PIL.Image.
     """
     try:
@@ -111,7 +123,7 @@ def extract_images_from_pdf(pdf_filepath):
 
 def get_image_embedding(image):
     """
-    Calcule l'embedding d'une image en utilisant le modèle CLIP.
+    Calcule l'embedding d'une image en utilisant CLIP.
     """
     image_input = clip_preprocess(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -120,7 +132,7 @@ def get_image_embedding(image):
     return image_features.cpu().numpy()[0].tolist()
 
 def compute_cosine_similarity(vec1, vec2):
-    """Calcule la similarité cosinus entre deux vecteurs."""
+    """Calcule la similarité cosinus entre deux vecteurs numpy."""
     vec1 = np.array(vec1)
     vec2 = np.array(vec2)
     norm1 = np.linalg.norm(vec1)
@@ -131,51 +143,56 @@ def compute_cosine_similarity(vec1, vec2):
 
 def compute_global_similarity(thesis_a, thesis_b):
     """
-    Calcule une similarité globale entre deux mémoires en combinant les critères suivants :
-      - Thème (0.2)
-      - Lieu de stage/d'étude (0.2)
-      - Méthodologie et objectifs (0.2)
-      - Résultats (0.2)
-      - Contenu complet (0.2)
-      - Images (0.2)
-      
-    (Ici, la somme des poids est 1 pour chaque critère, mais nous avons 6 critères.
-    Pour obtenir une moyenne, nous appliquons 1/6 à chacun.)
+    Calcule une similarité globale entre deux mémoires en combinant :
+      - Thème
+      - Lieu de stage/d'étude
+      - Méthodologie
+      - Résultats
+      - Contenu complet
+      - Images
+    Chaque critère a un poids de 1/6 => somme = 1
     """
-    # Récupération des embeddings stockés (conversion depuis JSON)
+    # Récupération des embeddings depuis la base (JSON -> numpy array)
     theme_emb_a = np.array(json.loads(thesis_a.theme_embedding))
     theme_emb_b = np.array(json.loads(thesis_b.theme_embedding))
+
     stage_emb_a = np.array(json.loads(thesis_a.stage_embedding))
     stage_emb_b = np.array(json.loads(thesis_b.stage_embedding))
-    meth_emb_a = np.array(json.loads(thesis_a.methodology_embedding))
-    meth_emb_b = np.array(json.loads(thesis_b.methodology_embedding))
+
+    meth_emb_a  = np.array(json.loads(thesis_a.methodology_embedding))
+    meth_emb_b  = np.array(json.loads(thesis_b.methodology_embedding))
+
     results_emb_a = np.array(json.loads(thesis_a.results_embedding))
     results_emb_b = np.array(json.loads(thesis_b.results_embedding))
+
     content_emb_a = np.array(json.loads(thesis_a.content_embedding))
     content_emb_b = np.array(json.loads(thesis_b.content_embedding))
+
     images_emb_a = np.array(json.loads(thesis_a.images_embedding)) if thesis_a.images_embedding else np.zeros(embedding_dim)
     images_emb_b = np.array(json.loads(thesis_b.images_embedding)) if thesis_b.images_embedding else np.zeros(embedding_dim)
-    
-    # Calcul des similarités cosinus pour chaque critère
+
+    # Calcul de la similarité pour chaque critère
     theme_sim = compute_cosine_similarity(theme_emb_a, theme_emb_b)
     location_sim = compute_cosine_similarity(stage_emb_a, stage_emb_b)
     meth_sim = compute_cosine_similarity(meth_emb_a, meth_emb_b)
     results_sim = compute_cosine_similarity(results_emb_a, results_emb_b)
     content_sim = compute_cosine_similarity(content_emb_a, content_emb_b)
     images_sim = compute_cosine_similarity(images_emb_a, images_emb_b)
-    
-    # Pondération égale de 1/6 pour chacun
-    overall = ( (1/6) * theme_sim +
-                (1/6) * location_sim +
-                (1/6) * meth_sim +
-                (1/6) * results_sim +
-                (1/6) * content_sim +
-                (1/6) * images_sim )
+
+    # Poids de 1/6 par critère => total 1
+    overall = (
+        (1/6)*theme_sim +
+        (1/6)*location_sim +
+        (1/6)*meth_sim +
+        (1/6)*results_sim +
+        (1/6)*content_sim +
+        (1/6)*images_sim
+    )
     return overall * 100
 
-# ------------------------------
+# ----------------------------------------------------------------------------
 # Routes Flask
-# ------------------------------
+# ----------------------------------------------------------------------------
 
 @app.route('/')
 def index():
@@ -184,9 +201,9 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload():
     """
-    Récupère les informations du formulaire, extrait le texte et les images du PDF,
-    calcule les embeddings pour chaque critère ainsi que pour le contenu complet et les images,
-    puis stocke les données dans MySQL et l'embedding du contenu complet dans ChromaDB.
+    Récupère le PDF et les champs du formulaire,
+    extrait le texte + images, calcule les embeddings,
+    stocke dans MySQL, puis indexe le contenu dans ChromaDB.
     """
     title = request.form.get('title')
     theme = request.form.get('theme')
@@ -205,30 +222,29 @@ def upload():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
-    # Extraction du texte complet depuis le PDF
+    # Extraction
     full_text = extract_text_from_pdf(file_path)
-    # Extraction des images depuis le PDF
     images = extract_images_from_pdf(file_path)
-    
-    # Calcul des embeddings pour chacun des critères
+
+    # Embeddings texte
     theme_emb = model.encode(theme).tolist()
     stage_emb = model.encode(stage_location).tolist()
     meth_emb = model.encode(methodology).tolist()
     results_emb = model.encode(results_text).tolist()
     full_content_emb = model.encode(full_text).tolist()
-    
-    # Traitement des images : calculer l'embedding pour chaque image puis la moyenne
+
+    # Embeddings images (moyenne si plusieurs)
     image_embeddings = []
     for img in images:
         emb = get_image_embedding(img)
         image_embeddings.append(emb)
+
     if image_embeddings:
-        # Moyenne des embeddings d'images
         images_emb = np.mean(np.array(image_embeddings), axis=0).tolist()
     else:
-        images_emb = [0.0] * embedding_dim  # Valeur par défaut si aucune image n'est extraite
+        images_emb = [0.0] * embedding_dim
 
-    # Stockage dans MySQL
+    # Stockage MySQL
     session = SessionLocal()
     thesis = Thesis(
         title=title,
@@ -252,7 +268,7 @@ def upload():
     thesis_id = thesis.id
     session.close()
 
-    # Stockage de l'embedding du contenu complet dans ChromaDB pour la recherche sémantique
+    # Ajout dans la collection ChromaDB
     collection.add(
         ids=[str(thesis_id)],
         embeddings=[full_content_emb],
@@ -271,8 +287,8 @@ def upload():
 @app.route('/compare', methods=['GET'])
 def compare():
     """
-    Compare deux mémoires par leurs IDs et renvoie un score global de similarité (en %).
-    Exemple d'URL : /compare?id1=1&id2=2
+    Compare deux mémoires par ID -> renvoie la similarité globale (en %).
+    Ex: /compare?id1=1&id2=2
     """
     id1 = request.args.get('id1')
     id2 = request.args.get('id2')
@@ -297,28 +313,27 @@ def compare():
 @app.route('/search', methods=['GET'])
 def search():
     """
-    Recherche sémantique : calcule l'embedding de la requête et interroge ChromaDB pour
-    trouver jusqu'à 100 documents similaires (basé sur le contenu complet du PDF).
-    Affiche ensuite tous les documents trouvés avec leur score de similarité (basé sur le contenu).
+    Recherche sémantique -> calcule l'embedding de la requête,
+    interroge ChromaDB pour trouver jusqu'à 100 documents proches.
+    Retourne la page 'results.html' avec la liste.
     """
     query = request.args.get('query', '')
     if not query:
         return "Une requête est nécessaire", 400
-    
+
     query_embedding = model.encode(query).tolist()
-    
+
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=100,
         include=["metadatas", "distances", "ids"]
     )
-    
+
     session = SessionLocal()
     theses_found = []
     for idx, thesis_id in enumerate(results['ids'][0]):
         t = session.query(Thesis).filter(Thesis.id == int(thesis_id)).first()
         if t:
-            # Transformation simplifiée de la distance en score de similarité (pour le contenu complet)
             content_score = max(0, 100 - results['distances'][0][idx] * 100)
             theses_found.append({
                 "id": t.id,
@@ -334,6 +349,7 @@ def search():
                 "pdf_path": t.pdf_path
             })
     session.close()
+
     return render_template('results.html', results=theses_found)
 
 @app.route('/uploads/<filename>')

@@ -1,52 +1,76 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Insertion d'un Mémoire Académique</title>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Insertion d'un Mémoire Académique</h1>
     <form action="/upload" method="POST" enctype="multipart/form-data">
-        <label for="title">Titre du thème :</label><br>
-        <input type="text" id="title" name="title" required><br><br>
+      <label for="title">Titre du thème :</label><br />
+      <input type="text" id="title" name="title" required /><br /><br />
 
-        <label for="theme">Thème / Sujet :</label><br>
-        <input type="text" id="theme" name="theme" required><br><br>
+      <label for="theme">Thème / Sujet :</label><br />
+      <input type="text" id="theme" name="theme" required /><br /><br />
 
-        <label for="author">Nom et Prénom :</label><br>
-        <input type="text" id="author" name="author" required><br><br>
+      <label for="author">Nom et Prénom :</label><br />
+      <input type="text" id="author" name="author" required /><br /><br />
 
-        <label for="university">Université d'accueil :</label><br>
-        <input type="text" id="university" name="university" required><br><br>
+      <label for="university">Université d'accueil :</label><br />
+      <input
+        type="text"
+        id="university"
+        name="university"
+        required
+      /><br /><br />
 
-        <label for="thesis_type">Type de mémoire :</label><br>
-        <select id="thesis_type" name="thesis_type">
-            <option value="research">Recherche (IMRD)</option>
-            <option value="professional">Professionnel / Stage</option>
-        </select><br><br>
+      <label for="thesis_type">Type de mémoire :</label><br />
+      <select id="thesis_type" name="thesis_type">
+        <option value="research">Recherche</option>
+        <option value="professional">Professionnel / Stage</option></select
+      ><br /><br />
 
-        <label for="stage_location">Lieu de stage / d'étude :</label><br>
-        <input type="text" id="stage_location" name="stage_location" required><br><br>
+      <label for="stage_location">Lieu de stage / d'étude :</label><br />
+      <input
+        type="text"
+        id="stage_location"
+        name="stage_location"
+        required
+      /><br /><br />
 
-        <label for="methodology">Méthodologie et objectifs :</label><br>
-        <textarea id="methodology" name="methodology" rows="4" cols="50"></textarea><br><br>
+      <label for="methodology">Méthodologie et objectifs :</label><br />
+      <textarea
+        id="methodology"
+        name="methodology"
+        rows="4"
+        cols="50"
+      ></textarea
+      ><br /><br />
 
-        <label for="results">Résultats (technologies, outils, etc.) :</label><br>
-        <textarea id="results" name="results" rows="4" cols="50"></textarea><br><br>
+      <label for="results">Résultats (technologies, outils, etc.) :</label
+      ><br />
+      <textarea id="results" name="results" rows="4" cols="50"></textarea
+      ><br /><br />
 
-        <label for="pdf_file">Fichier PDF :</label><br>
-        <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" required><br><br>
+      <label for="pdf_file">Fichier PDF :</label><br />
+      <input
+        type="file"
+        id="pdf_file"
+        name="pdf_file"
+        accept="application/pdf"
+        required
+      /><br /><br />
 
-        <input type="submit" value="Envoyer">
+      <input type="submit" value="Envoyer" />
     </form>
 
-    <hr>
+    <hr />
     <h2>Recherche de mémoires similaires</h2>
     <form action="/search" method="GET">
-        <label for="query">Recherche par contenu / thème :</label><br>
-        <input type="text" id="query" name="query" required>
-        <input type="submit" value="Rechercher">
+      <label for="query">Recherche par contenu / thème :</label><br />
+      <input type="text" id="query" name="query" required />
+      <input type="submit" value="Rechercher" />
     </form>
-</body>
+  </body>
 </html>
