@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Comparaison de mémoires</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #0f1730;
+        --accent: #6aa7ff;
+        --accent2: #9dd1ff;
+        --text: #e9eefc;
+        --muted: #b7c3e2;
+        --ok: #46d39a;
+        --warn: #ffb057;
+        --bad: #ff7a7a;
+        --ring: 0 0 0 3px rgba(106, 167, 255, 0.35);
+        --radius: 16px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1200px 800px at 10% -10%,
+            #1a2a55 0%,
+            transparent 60%
+          ),
+          radial-gradient(1000px 800px at 110% 10%, #122148 0%, transparent 60%),
+          var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(1.2rem, 1.1rem + 1.2vw, 1.9rem);
+      }
+      .badge {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.78rem;
+        color: var(--muted);
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      a.link {
+        color: var(--accent2);
+        text-decoration: none;
+      }
+      a.link:hover {
+        text-decoration: underline;
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr 420px;
+        }
+      }
+
+      .card {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.03),
+            transparent 50%
+          ),
+          var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        padding: 22px;
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .mini {
+        padding: 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .mini h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-size: 0.98rem;
+        color: var(--accent2);
+      }
+      .mini p {
+        margin: 0.2rem 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .pill {
+        font-size: 0.76rem;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .progress {
+        width: 200px;
+        height: 200px;
+        margin: 18px auto 6px;
+        position: relative;
+        display: grid;
+        place-items: center;
+      }
+      .progress svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+      }
+      .progress .value {
+        position: absolute;
+        font-weight: 800;
+        font-size: 1.9rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+        font-size: 0.95rem;
+      }
+      thead th {
+        color: var(--accent2);
+        font-weight: 700;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .meter {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .meter > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #4a8eef);
+        width: 0%;
+      }
+
+      .score-good {
+        color: var(--ok);
+      }
+      .score-mid {
+        color: var(--warn);
+      }
+      .score-bad {
+        color: var(--bad);
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .right small {
+        color: var(--muted);
+      }
+      .btn {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--accent2);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.07);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div>
+          <div class="badge">ThesisPlag • Comparaison</div>
+          <h1>Comparaison de deux mémoires</h1>
+          <p class="hint">
+            Analyse sémantique multi-critères (thème, lieu, méthodologie,
+            résultats, contenu, images).
+          </p>
+        </div>
+        <div><a class="link" href="{{ url_for('index') }}">← Retour</a></div>
+      </header>
+
+      <div class="grid">
+        <!-- Colonne gauche : infos mémoires + jauge -->
+        <section class="card left">
+          <div class="pair">
+            <div class="mini">
+              <h3>{{ thesis1.title }}</h3>
+              <p><strong>Auteur :</strong> {{ thesis1.author }}</p>
+              <div class="meta">
+                <span class="pill">{{ thesis1.university }}</span>
+                <span class="pill">{{ thesis1.thesis_type }}</span>
+                <span class="pill">Lieu : {{ thesis1.stage_location }}</span>
+              </div>
+            </div>
+            <div class="mini">
+              <h3>{{ thesis2.title }}</h3>
+              <p><strong>Auteur :</strong> {{ thesis2.author }}</p>
+              <div class="meta">
+                <span class="pill">{{ thesis2.university }}</span>
+                <span class="pill">{{ thesis2.thesis_type }}</span>
+                <span class="pill">Lieu : {{ thesis2.stage_location }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Jauge circulaire -->
+          <div class="progress" data-overall="{{ '%.2f'|format(overall) }}">
+            {% set radius = 90 %} {% set circumference = 2 * 3.14159 * radius %}
+            <svg viewBox="0 0 220 220" aria-hidden="true">
+              <circle
+                cx="110"
+                cy="110"
+                r="{{ radius }}"
+                stroke="rgba(255,255,255,.12)"
+                stroke-width="18"
+                fill="none"
+              ></circle>
+              <circle
+                id="meter"
+                cx="110"
+                cy="110"
+                r="{{ radius }}"
+                stroke="url(#g1)"
+                stroke-width="18"
+                fill="none"
+                stroke-linecap="round"
+                stroke-dasharray="{{ circumference }}, {{ circumference }}"
+                stroke-dashoffset="{{ circumference }}"
+              ></circle>
+              <defs>
+                <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#6aa7ff" />
+                  <stop offset="100%" stop-color="#4a8eef" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="value">{{ '%.1f'|format(overall) }}%</div>
+          </div>
+          <p class="hint" style="text-align: center; margin-top: 2px">
+            Score global de similarité (moyenne pondérée des critères à parts
+            égales).
+          </p>
+        </section>
+
+        <!-- Colonne droite : ventilation des critères -->
+        <aside class="card right">
+          <h3 style="margin: 0 0 10px 0; color: var(--accent2)">
+            Détail par critère
+          </h3>
+          <table aria-label="Détail des similarités">
+            <thead>
+              <tr>
+                <th>Critère</th>
+                <th style="width: 90px">Score</th>
+                <th>Barre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for k, v in sims.items() %} {% set cls = 'score-good' if v >=
+              70 else ('score-mid' if v >= 40 else 'score-bad') %}
+              <tr>
+                <td>{{ k }}</td>
+                <td class="{{ cls }}">{{ '%.1f'|format(v) }}%</td>
+                <td>
+                  <div class="meter" data-val="{{ '%.2f'|format(v) }}">
+                    <span></span>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <div
+            style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap"
+          >
+            <a
+              class="btn"
+              href="{{ url_for('uploaded_file', filename=thesis1.pdf_path) }}"
+              target="_blank"
+              >Ouvrir PDF 1</a
+            >
+            <a
+              class="btn"
+              href="{{ url_for('uploaded_file', filename=thesis2.pdf_path) }}"
+              target="_blank"
+              >Ouvrir PDF 2</a
+            >
+            <a
+              class="btn"
+              href="{{ request.path }}?id1={{ thesis1.id }}&id2={{ thesis2.id }}"
+              target="_blank"
+              >Ouvrir cette vue</a
+            >
+            <a
+              class="btn"
+              href="{{ request.path }}?id1={{ thesis1.id }}&id2={{ thesis2.id }}"
+              onclick="toJson(event)"
+              >Voir JSON</a
+            >
+            <small
+              >Astuce : le JSON est aussi disponible en envoyant
+              <code>Accept: application/json</code>.</small
+            >
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      // Animation de la jauge circulaire et des barres
+      (function () {
+        const progress = document.querySelector(".progress");
+        if (progress) {
+          const overall = parseFloat(
+            progress.getAttribute("data-overall") || "0"
+          );
+          const circle = document.getElementById("meter");
+          const circumference = parseFloat(
+            circle.getAttribute("stroke-dasharray").split(",")[0]
+          );
+          const offset = circumference * (1 - overall / 100);
+          // animation simple
+          let cur = circumference,
+            step = (circumference - offset) / 30,
+            i = 0;
+          const tick = () => {
+            cur -= step;
+            i++;
+            if (cur <= offset || i > 30) {
+              cur = offset;
+            }
+            circle.setAttribute("stroke-dashoffset", cur);
+            if (i <= 30) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+
+        document.querySelectorAll(".meter").forEach((m) => {
+          const v = parseFloat(m.getAttribute("data-val") || "0");
+          const span = m.querySelector("span");
+          let w = 0,
+            target = Math.max(0, Math.min(100, v)),
+            i = 0;
+          const anim = () => {
+            w += (target - w) * 0.15;
+            span.style.width = w + "%";
+            i++;
+            if (Math.abs(w - target) > 0.5 && i < 40)
+              requestAnimationFrame(anim);
+            else span.style.width = target + "%";
+          };
+          requestAnimationFrame(anim);
+        });
+      })();
+
+      // Lien "Voir JSON"
+      function toJson(e) {
+        e.preventDefault();
+        const url = new URL(e.currentTarget.href, window.location.origin);
+        fetch(url.toString(), { headers: { Accept: "application/json" } })
+          .then((r) => r.json())
+          .then((data) => {
+            const win = window.open("", "_blank");
+            win.document.write(
+              '<pre style="white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Consolas,monospace;padding:16px;color:#e9eefc;background:#0b1020;margin:0;">' +
+                JSON.stringify(data, null, 2) +
+                "</pre>"
+            );
+          })
+          .catch((err) => alert("Impossible de charger le JSON"));
+      }
+    </script>
+  </body>
+</html>
