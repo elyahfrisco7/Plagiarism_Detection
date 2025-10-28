@@ -3,74 +3,365 @@
   <head>
     <meta charset="UTF-8" />
     <title>Insertion d'un Mémoire Académique</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #0f1730;
+        --accent: #6aa7ff;
+        --accent-2: #9dd1ff;
+        --text: #e9eefc;
+        --muted: #b7c3e2;
+        --danger: #ff7a7a;
+        --ring: 0 0 0 3px rgba(106, 167, 255, 0.35);
+        --radius: 16px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+        background: radial-gradient(
+            1200px 800px at 10% -10%,
+            #1a2a55 0%,
+            transparent 60%
+          ),
+          radial-gradient(1000px 800px at 110% 10%, #122148 0%, transparent 60%),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(1.3rem, 1.2rem + 1.2vw, 2rem);
+        letter-spacing: 0.2px;
+      }
+      .subtitle {
+        margin: 6px 0 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 920px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .card {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.03),
+            transparent 50%
+          ),
+          var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        padding: 22px;
+      }
+      .card h2 {
+        margin: 0 0 12px 0;
+        font-size: 1.05rem;
+        color: var(--accent-2);
+        letter-spacing: 0.3px;
+        font-weight: 600;
+      }
+      form {
+        display: grid;
+        gap: 14px;
+      }
+      .row {
+        display: grid;
+        gap: 12px;
+      }
+      @media (min-width: 700px) {
+        .row.two {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.92rem;
+        margin-bottom: 6px;
+        color: var(--muted);
+      }
+      input[type="text"],
+      input[type="file"],
+      select,
+      textarea {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text);
+        padding: 12px 14px;
+        border-radius: 12px;
+        outline: none;
+        transition: border 0.2s, box-shadow 0.2s, background 0.2s,
+          transform 0.02s;
+      }
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+      input[type="file"] {
+        padding: 10px;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: var(--ring);
+      }
+      .hint {
+        margin-top: 6px;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: flex-end;
+        margin-top: 6px;
+      }
+      .btn {
+        appearance: none;
+        border: 0;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.03s ease, box-shadow 0.2s ease,
+          opacity 0.2s ease;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: linear-gradient(180deg, var(--accent), #4a8eef);
+        color: #06122a;
+        box-shadow: 0 10px 20px rgba(74, 142, 239, 0.25);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--accent-2);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      hr {
+        border: 0;
+        height: 1px;
+        background: linear-gradient(
+          to right,
+          transparent,
+          rgba(255, 255, 255, 0.12),
+          transparent
+        );
+        margin: 28px 0;
+      }
+      .badge {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.78rem;
+        color: var(--muted);
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .kicker {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+    </style>
   </head>
   <body>
-    <h1>Insertion d'un Mémoire Académique</h1>
-    <form action="/upload" method="POST" enctype="multipart/form-data">
-      <label for="title">Titre du thème :</label><br />
-      <input type="text" id="title" name="title" required /><br /><br />
+    <div class="container">
+      <header>
+        <div>
+          <div class="badge">ThesisPlag • Saisie & Recherche</div>
+          <h1>Insertion d'un Mémoire Académique</h1>
+          <p class="subtitle">
+            Renseignez les métadonnées et téléversez le PDF. Le système extraira
+            le texte et les éléments visuels pour l’analyse sémantique.
+          </p>
+        </div>
+      </header>
 
-      <label for="theme">Thème / Sujet :</label><br />
-      <input type="text" id="theme" name="theme" required /><br /><br />
+      <div class="grid">
+        <!-- Carte : Formulaire d'upload -->
+        <section class="card">
+          <h2>Formulaire de fiche Tecnique</h2>
+          <form action="/upload" method="POST" enctype="multipart/form-data">
+            <div class="row two">
+              <div>
+                <label for="title">Titre du thème</label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  required
+                  placeholder="Ex. Système de détection de plagiat multimodal"
+                />
+              </div>
+              <div>
+                <label for="theme">Thème / Sujet</label>
+                <input
+                  type="text"
+                  id="theme"
+                  name="theme"
+                  required
+                  placeholder="Ex. Intelligence artificielle, Deep Learning"
+                />
+              </div>
+            </div>
 
-      <label for="author">Nom et Prénom :</label><br />
-      <input type="text" id="author" name="author" required /><br /><br />
+            <div class="row two">
+              <div>
+                <label for="author">Nom et Prénom</label>
+                <input
+                  type="text"
+                  id="author"
+                  name="author"
+                  required
+                  placeholder="Ex. Andriantsialo Elyah Frisco"
+                />
+              </div>
+              <div>
+                <label for="university">Université d'accueil</label>
+                <input
+                  type="text"
+                  id="university"
+                  name="university"
+                  required
+                  placeholder="Ex. ENI - Université de Fianarantsoa"
+                />
+              </div>
+            </div>
 
-      <label for="university">Université d'accueil :</label><br />
-      <input
-        type="text"
-        id="university"
-        name="university"
-        required
-      /><br /><br />
+            <div class="row two">
+              <div>
+                <label for="thesis_type">Type de mémoire</label>
+                <select id="thesis_type" name="thesis_type">
+                  <option value="research">Recherche</option>
+                  <option value="professional">Professionnel / Stage</option>
+                </select>
+              </div>
+              <div>
+                <label for="stage_location">Lieu de stage / d'étude</label>
+                <input
+                  type="text"
+                  id="stage_location"
+                  name="stage_location"
+                  required
+                  placeholder="Ex. Zomatel, Laboratoire, etc."
+                />
+              </div>
+            </div>
 
-      <label for="thesis_type">Type de mémoire :</label><br />
-      <select id="thesis_type" name="thesis_type">
-        <option value="research">Recherche</option>
-        <option value="professional">Professionnel / Stage</option></select
-      ><br /><br />
+            <div>
+              <label for="methodology">Méthodologie et objectifs</label>
+              <textarea
+                id="methodology"
+                name="methodology"
+                rows="4"
+                placeholder="Décrivez brièvement les approches, protocoles, jeux de données, objectifs et indicateurs..."
+              ></textarea>
+              <div class="hint">Recommandé : 3–6 phrases synthétiques.</div>
+            </div>
 
-      <label for="stage_location">Lieu de stage / d'étude :</label><br />
-      <input
-        type="text"
-        id="stage_location"
-        name="stage_location"
-        required
-      /><br /><br />
+            <div>
+              <label for="results"
+                >Résultats (technologies, outils, etc.)</label
+              >
+              <textarea
+                id="results"
+                name="results"
+                rows="4"
+                placeholder="Synthèse des principaux résultats, contributions, outils et limites..."
+              ></textarea>
+            </div>
 
-      <label for="methodology">Méthodologie et objectifs :</label><br />
-      <textarea
-        id="methodology"
-        name="methodology"
-        rows="4"
-        cols="50"
-      ></textarea
-      ><br /><br />
+            <div>
+              <label for="pdf_file">Fichier PDF</label>
+              <input
+                type="file"
+                id="pdf_file"
+                name="pdf_file"
+                accept="application/pdf"
+                required
+              />
+              <div class="hint">
+                Formats acceptés : PDF (≤ 50 Mo). Assurez-vous que le texte est
+                sélectionnable si possible.
+              </div>
+            </div>
 
-      <label for="results">Résultats (technologies, outils, etc.) :</label
-      ><br />
-      <textarea id="results" name="results" rows="4" cols="50"></textarea
-      ><br /><br />
+            <div class="actions">
+              <button class="btn btn-secondary" type="reset">
+                Réinitialiser
+              </button>
+              <button class="btn btn-primary" type="submit">Envoyer</button>
+            </div>
+          </form>
+        </section>
 
-      <label for="pdf_file">Fichier PDF :</label><br />
-      <input
-        type="file"
-        id="pdf_file"
-        name="pdf_file"
-        accept="application/pdf"
-        required
-      /><br /><br />
+        <!-- Carte : Recherche -->
+        <section class="card">
+          <h2>Recherche de mémoires similaires</h2>
+          <form action="/search" method="GET">
+            <div>
+              <label for="query">Recherche par contenu / thème</label>
+              <input
+                type="text"
+                id="query"
+                name="query"
+                required
+                placeholder="Ex. Détection de plagiat, IA, méthodologie, etc."
+              />
+            </div>
+            <div
+              class="actions"
+              style="justify-content: flex-start; margin-top: 6px"
+            >
+              <button class="btn btn-primary" type="submit">Rechercher</button>
+            </div>
+            <p class="hint">
+              Astuce : utilisez des mots-clés précis (ex. « paraphrase
+              sémantique », « deep learning », « figures similaires »).
+            </p>
+          </form>
 
-      <input type="submit" value="Envoyer" />
-    </form>
-
-    <hr />
-    <h2>Recherche de mémoires similaires</h2>
-    <form action="/search" method="GET">
-      <label for="query">Recherche par contenu / thème :</label><br />
-      <input type="text" id="query" name="query" required />
-      <input type="submit" value="Rechercher" />
-    </form>
+          <hr />
+          <p class="hint">
+            Besoin d’aide ? Vérifiez la connexion au serveur, le poids du PDF et
+            la présence d’images si la similarité visuelle est faible.
+          </p>
+        </section>
+      </div>
+    </div>
   </body>
 </html>
