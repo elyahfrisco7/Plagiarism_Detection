@@ -406,5 +406,68 @@ def search():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/theses')
+def theses():
+    session = SessionLocal()
+    items = session.query(Thesis).order_by(Thesis.id.desc()).all()
+    session.close()
+    return render_template('theses.html', theses=items)
+
+@app.route('/api/scan', methods=['GET'])
+def api_scan():
+    target_id = request.args.get('id')
+    if not target_id:
+        return jsonify({"error": "Paramètre id manquant"}), 400
+
+    session = SessionLocal()
+    all_theses = session.query(Thesis).all()
+    target = None
+    for t in all_theses:
+        if str(t.id) == str(target_id):
+            target = t
+            break
+
+    if target is None:
+        session.close()
+        return jsonify({"error": "Mémoire introuvable"}), 404
+
+    results = []
+    for t in all_theses:
+        if t.id == target.id:
+            continue
+        sims, overall = compute_similarity_breakdown(target, t)
+        results.append({
+            "id": t.id,
+            "title": t.title,
+            "author": t.author,
+            "university": t.university,
+            "thesis_type": t.thesis_type,
+            "stage_location": t.stage_location,
+            "pdf_path": t.pdf_path,
+            "overall": float(overall),
+            "sims": {k: float(v) for k, v in sims.items()},
+            "compare_url": url_for('compare', id1=target.id, id2=t.id)
+        })
+
+    session.close()
+
+    # Tri décroissant par score global
+    results.sort(key=lambda x: x["overall"], reverse=True)
+
+    return jsonify({
+        "target": {
+            "id": target.id,
+            "title": target.title,
+            "author": target.author,
+            "university": target.university,
+            "thesis_type": target.thesis_type,
+            "stage_location": target.stage_location,
+            "pdf_path": target.pdf_path
+        },
+        "results": results
+    })
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)

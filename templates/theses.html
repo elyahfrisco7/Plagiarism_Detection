@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bibliothèque des mémoires</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #0f1730;
+        --accent: #6aa7ff;
+        --accent2: #9dd1ff;
+        --text: #e9eefc;
+        --muted: #b7c3e2;
+        --ok: #46d39a;
+        --warn: #ffb057;
+        --bad: #ff7a7a;
+        --ring: 0 0 0 3px rgba(106, 167, 255, 0.35);
+        --radius: 16px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1200px 800px at 10% -10%,
+            #1a2a55 0%,
+            transparent 60%
+          ),
+          radial-gradient(1000px 800px at 110% 10%, #122148 0%, transparent 60%),
+          var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(1.2rem, 1.1rem + 1.2vw, 1.9rem);
+      }
+      .badge {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.78rem;
+        color: var(--muted);
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      a.link {
+        color: var(--accent2);
+        text-decoration: none;
+      }
+      a.link:hover {
+        text-decoration: underline;
+      }
+
+      .card {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.03),
+            transparent 50%
+          ),
+          var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        padding: 22px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+        font-size: 0.95rem;
+      }
+      thead th {
+        color: var(--accent2);
+        font-weight: 700;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .pill {
+        font-size: 0.76rem;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #06122a;
+        text-decoration: none;
+        background: linear-gradient(180deg, var(--accent), #4a8eef);
+        box-shadow: 0 8px 18px rgba(74, 142, 239, 0.25);
+        font-weight: 700;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .btn--ghost {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--accent2);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: none;
+        font-weight: 600;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      /* Zone résultats */
+      .results {
+        margin-top: 24px;
+        display: none;
+      }
+      .results.active {
+        display: block;
+      }
+      .grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .mini {
+        padding: 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .mini h3 {
+        margin: 0.2rem 0 0.4rem;
+        font-size: 1rem;
+        color: var(--accent2);
+      }
+      .meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+
+      .meter {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+      .meter > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #4a8eef);
+        width: 0%;
+      }
+      .score {
+        font-weight: 800;
+        font-size: 1.1rem;
+      }
+      .score-good {
+        color: var(--ok);
+      }
+      .score-mid {
+        color: var(--warn);
+      }
+      .score-bad {
+        color: var(--bad);
+      }
+
+      .row-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .loading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        margin-top: 12px;
+      }
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        border-top-color: var(--accent);
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .kicker {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .subtle {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .right {
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div>
+          <div class="badge">ThesisPlag • Bibliothèque</div>
+          <h1>Liste des mémoires</h1>
+          <p class="subtle">
+            Cliquez sur <strong>Scanner</strong> pour comparer un mémoire à tous
+            les autres et obtenir un classement par similarité.
+          </p>
+        </div>
+        <div>
+          <a class="link" href="{{ url_for('index') }}">← Retour à l’accueil</a>
+        </div>
+      </header>
+
+      <section class="card">
+        <table aria-label="Liste des mémoires">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Titre</th>
+              <th>Auteur</th>
+              <th>Université</th>
+              <th>Type</th>
+              <th>Lieu</th>
+              <th class="right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in theses %}
+            <tr>
+              <td>{{ t.id }}</td>
+              <td>{{ t.title }}</td>
+              <td>{{ t.author }}</td>
+              <td><span class="pill">{{ t.university }}</span></td>
+              <td><span class="pill">{{ t.thesis_type }}</span></td>
+              <td><span class="pill">{{ t.stage_location }}</span></td>
+              <td class="right">
+                <button class="btn" onclick="scan({{ t.id }}, this)">
+                  Scanner
+                </button>
+                <a
+                  class="btn btn--ghost"
+                  target="_blank"
+                  href="{{ url_for('uploaded_file', filename=t.pdf_path) }}"
+                  >Ouvrir PDF</a
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div id="scanBox" class="results">
+          <div class="kicker">
+            <div class="badge" id="scanTitle">Résultats de scan</div>
+          </div>
+
+          <div id="loading" class="loading" style="display: none">
+            <div class="spinner"></div>
+            <div>
+              Analyse en cours… Cela peut prendre un moment selon la taille des
+              documents.
+            </div>
+          </div>
+
+          <div id="results" class="grid"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      function clsForScore(v) {
+        if (v >= 70) return "score-good";
+        if (v >= 40) return "score-mid";
+        return "score-bad";
+      }
+      function formatPct(v) {
+        return (Math.round(v * 10) / 10).toFixed(1) + "%";
+      }
+      async function scan(id, btn) {
+        const box = document.getElementById("scanBox");
+        const res = document.getElementById("results");
+        const loading = document.getElementById("loading");
+        const title = document.getElementById("scanTitle");
+
+        // UI state
+        box.classList.add("active");
+        res.innerHTML = "";
+        loading.style.display = "flex";
+        btn.disabled = true;
+
+        try {
+          const r = await fetch(`/api/scan?id=${id}`);
+          if (!r.ok) throw new Error("Erreur réseau");
+          const data = await r.json();
+
+          title.textContent = `Résultats de scan pour : ${data.target.title}`;
+
+          // Construire les cartes de résultats
+          const frag = document.createDocumentFragment();
+          data.results.forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "mini";
+
+            const scoreCls = clsForScore(item.overall);
+
+            card.innerHTML = `
+            <h3>${item.title}</h3>
+            <div class="subtle" style="margin:-2px 0 8px 0;">${item.author} • ${
+              item.university
+            } • ${item.thesis_type}</div>
+            <div class="row-actions" style="margin-bottom:8px;">
+              <span class="pill">Lieu : ${item.stage_location}</span>
+              <a class="pill" href="${
+                item.compare_url
+              }" target="_blank">Vue comparative</a>
+              <a class="pill" href="/uploads/${
+                item.pdf_path
+              }" target="_blank">Ouvrir PDF</a>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0 6px;">
+              <div class="score ${scoreCls}" title="Score global">${formatPct(
+              item.overall
+            )}</div>
+              <div class="meter" data-val="${item.overall}"><span></span></div>
+            </div>
+            <div class="subtle">Détails par critère :</div>
+            <table style="width:100%; margin-top:6px;">
+              <tbody>
+                ${Object.entries(item.sims)
+                  .map(
+                    ([k, v]) => `
+                  <tr>
+                    <td style="padding:6px 6px 6px 0; width:40%;">${k}</td>
+                    <td style="padding:6px; width:70px; text-align:right;" class="${clsForScore(
+                      v
+                    )}">${formatPct(v)}</td>
+                    <td style="padding:6px;">
+                      <div class="meter" data-val="${v}"><span></span></div>
+                    </td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          `;
+            frag.appendChild(card);
+          });
+          res.appendChild(frag);
+
+          // Animations des barres
+          requestAnimationFrame(() => {
+            document.querySelectorAll(".meter").forEach((m) => {
+              const v = parseFloat(m.getAttribute("data-val") || "0");
+              const span = m.querySelector("span");
+              let w = 0,
+                target = Math.max(0, Math.min(100, v)),
+                i = 0;
+              const anim = () => {
+                w += (target - w) * 0.15;
+                span.style.width = w + "%";
+                i++;
+                if (Math.abs(w - target) > 0.5 && i < 40)
+                  requestAnimationFrame(anim);
+                else span.style.width = target + "%";
+              };
+              requestAnimationFrame(anim);
+            });
+          });
+        } catch (e) {
+          alert("Échec du scan. Vérifiez le serveur ou les données.");
+        } finally {
+          loading.style.display = "none";
+          btn.disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>
