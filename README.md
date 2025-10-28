@@ -4,6 +4,10 @@ Maintenant, pour activer cet environnement, la commande dépend du système d'ex
 
 venv\Scripts\activate
 
+Lancer le script python app.py
+
+Pour comparer deux livres : http://127.0.0.1:5000/compare?id1=1&id2=2
+
 Le code sql pour créer le bd et les et table :
 
 CREATE DATABASE IF NOT EXISTS thesis_db;
