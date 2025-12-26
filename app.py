@@ -16,7 +16,8 @@ from sentence_transformers import SentenceTransformer
 from chromadb import PersistentClient
 
 # Pour l'extraction d'images depuis le PDF
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
+import io
 from PIL import Image
 
 # Pour encoder les images avec CLIP
@@ -111,15 +112,27 @@ def extract_text_from_pdf(pdf_filepath):
 
 def extract_images_from_pdf(pdf_filepath):
     """
-    Extrait les images d'un PDF en convertissant chaque page en image PIL via pdf2image.
+    Extrait les images d'un PDF via PyMuPDF (fitz).
     Retourne une liste d'objets PIL.Image.
     """
+    images = []
     try:
-        images = convert_from_path(pdf_filepath)
-        return images
+        doc = fitz.open(pdf_filepath)
+        for page_index in range(len(doc)):
+            page = doc[page_index]
+            image_list = page.get_images(full=True)
+            
+            for img_index, img in enumerate(image_list):
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                image = Image.open(io.BytesIO(image_bytes))
+                images.append(image)
+                
+        print(f"DEBUG: Extracted {len(images)} images from {pdf_filepath}")
     except Exception as e:
-        print("Erreur d'extraction d'images:", e)
-        return []
+        print(f"Erreur d'extraction d'images (PyMuPDF): {e}")
+    return images
 
 def get_image_embedding(image):
     """
