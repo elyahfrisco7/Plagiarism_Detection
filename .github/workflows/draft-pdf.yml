@@ -1,12 +1,12 @@
 name: Draft PDF
 on:
+  workflow_dispatch:      # <--- AJOUTEZ CECI (Permet le clic manuel)
   push:
     paths:
       - 'paper.md'
       - 'paper.bib'
       - '*.png'      
       - '.github/workflows/draft-pdf.yml'
-      
 
 jobs:
   paper:
@@ -20,12 +20,10 @@ jobs:
         uses: openjournals/openjournals-draft-action@master
         with:
           journal: joss
-         
           paper-path: paper.md
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: paper
-       
           path: paper.pdf
