@@ -50,4 +50,5 @@ The application follows a modular architecture. The core processing pipeline han
 
 The global similarity score ($S_{global}$) is computed using an egalitarian weighting model, aggregating cosine similarities from the six defined criteria. This allows for a nuanced assessment, providing decision support thresholds (e.g., >80% for high suspicion) rather than a simple binary judgment.
 
+
 # References
