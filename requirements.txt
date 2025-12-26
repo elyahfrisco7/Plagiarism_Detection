@@ -5,7 +5,9 @@ PyPDF2
 sentence-transformers
 chromadb
 Werkzeug
-pdf2image
 Pillow
 torch
-clip
+ftfy
+regex
+tqdm
+pymupdf
