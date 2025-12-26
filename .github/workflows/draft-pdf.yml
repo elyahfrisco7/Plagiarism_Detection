@@ -6,6 +6,7 @@ on:
       - 'paper.bib'
       - '*.png'      
       - '.github/workflows/draft-pdf.yml'
+      
 
 jobs:
   paper:
