@@ -228,7 +228,10 @@
             résultats, contenu, images).
           </p>
         </div>
-        <div><a class="link" href="{{ url_for('index') }}">← Retour</a></div>
+        <nav style="display: flex; gap: 20px; align-items: center;">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary" style="text-decoration: none; font-size: 0.9rem;">Accueil</a>
+            <a href="{{ url_for('theses') }}" class="btn btn-secondary" style="text-decoration: none; font-size: 0.9rem;">Tous les mémoires</a>
+        </nav>
       </header>
 
       <div class="grid">

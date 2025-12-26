@@ -255,19 +255,20 @@
           <div class="badge">ThesisPlag • Bibliothèque</div>
           <h1>Liste des mémoires</h1>
           <p class="subtle">
-            Cliquez sur <strong>Scanner</strong> pour comparer un mémoire à tous
-            les autres et obtenir un classement par similarité.
+            Sélectionnez deux mémoires pour comparer ou cliquez sur <strong>Scanner</strong>.
           </p>
         </div>
-        <div>
-          <a class="link" href="{{ url_for('index') }}">← Retour à l’accueil</a>
-        </div>
+        <nav style="display: flex; gap: 20px; align-items: center;">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary" style="text-decoration: none; font-size: 0.9rem;">Accueil</a>
+            <a href="{{ url_for('theses') }}" class="btn btn-secondary" style="text-decoration: none; font-size: 0.9rem;">Tous les mémoires</a>
+        </nav>
       </header>
 
       <section class="card">
         <table aria-label="Liste des mémoires">
           <thead>
             <tr>
+              <th style="width: 40px;"></th>
               <th>ID</th>
               <th>Titre</th>
               <th>Auteur</th>
@@ -280,6 +281,9 @@
           <tbody>
             {% for t in theses %}
             <tr>
+              <td>
+                <input type="checkbox" class="compare-check" value="{{ t.id }}" onchange="updateCompareState()">
+              </td>
               <td>{{ t.id }}</td>
               <td>{{ t.title }}</td>
               <td>{{ t.author }}</td>
@@ -287,7 +291,7 @@
               <td><span class="pill">{{ t.thesis_type }}</span></td>
               <td><span class="pill">{{ t.stage_location }}</span></td>
               <td class="right">
-                <button class="btn" onclick="scan({{ t.id }}, this)">
+                <button class="btn" onclick="scan('{{ t.id }}', this)">
                   Scanner
                 </button>
                 <a
@@ -318,6 +322,12 @@
           <div id="results" class="grid"></div>
         </div>
       </section>
+
+      <!-- Floating Compare Button -->
+      <div id="compareBar" style="position: fixed; bottom: 20px; right: 20px; background: var(--card); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; align-items: center; gap: 15px; z-index: 100;">
+        <span id="compareCount" style="font-weight: 600; color: var(--text);">0 sélectionné(s)</span>
+        <button id="compareBtn" class="btn btn-primary" onclick="goToCompare()">Comparer</button>
+      </div>
     </div>
 
     <script>
@@ -426,6 +436,40 @@
           loading.style.display = "none";
           btn.disabled = false;
         }
+      }
+
+      function updateCompareState() {
+        const checks = document.querySelectorAll('.compare-check:checked');
+        const bar = document.getElementById('compareBar');
+        const count = document.getElementById('compareCount');
+        const btn = document.getElementById('compareBtn');
+        
+        if (checks.length > 0) {
+            bar.style.display = 'flex';
+            count.textContent = `${checks.length} sélectionné(s)`;
+        } else {
+            bar.style.display = 'none';
+        }
+
+        if (checks.length === 2) {
+            btn.disabled = false;
+            btn.style.opacity = 1;
+            // Disable other checkboxes
+            document.querySelectorAll('.compare-check:not(:checked)').forEach(c => c.disabled = true);
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = 0.6;
+            // Enable all checkboxes
+            document.querySelectorAll('.compare-check').forEach(c => c.disabled = false);
+        }
+      }
+
+      function goToCompare() {
+        const checks = document.querySelectorAll('.compare-check:checked');
+        if (checks.length !== 2) return;
+        const id1 = checks[0].value;
+        const id2 = checks[1].value;
+        window.location.href = `/compare?id1=${id1}&id2=${id2}`;
       }
     </script>
   </body>

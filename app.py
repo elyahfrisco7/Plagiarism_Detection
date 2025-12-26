@@ -357,8 +357,6 @@ def compare():
         overall=overall,
         sims=sims
     )
-    
-    
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -371,13 +369,16 @@ def search():
     if not query:
         return "Une requête est nécessaire", 400
 
+    print(f"DEBUG: Search query received: '{query}'")
     query_embedding = model.encode(query).tolist()
 
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=100,
-        include=["metadatas", "distances", "ids"]
+        include=["metadatas", "distances"]
     )
+    
+    print(f"DEBUG: ChromaDB returned {len(results['ids'][0])} results")
 
     session = SessionLocal()
     theses_found = []
@@ -399,6 +400,8 @@ def search():
                 "pdf_path": t.pdf_path
             })
     session.close()
+    
+    print(f"DEBUG: Found {len(theses_found)} theses in MySQL matching ChromaDB IDs")
 
     return render_template('results.html', results=theses_found)
 

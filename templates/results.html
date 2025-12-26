@@ -3,54 +3,238 @@
   <head>
     <meta charset="UTF-8" />
     <title>Résultats de Recherche</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #0f1730;
+        --accent: #6aa7ff;
+        --accent2: #9dd1ff;
+        --text: #e9eefc;
+        --muted: #b7c3e2;
+        --ok: #46d39a;
+        --warn: #ffb057;
+        --bad: #ff7a7a;
+        --ring: 0 0 0 3px rgba(106, 167, 255, 0.35);
+        --radius: 16px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1200px 800px at 10% -10%,
+            #1a2a55 0%,
+            transparent 60%
+          ),
+          radial-gradient(1000px 800px at 110% 10%, #122148 0%, transparent 60%),
+          var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(1.2rem, 1.1rem + 1.2vw, 1.9rem);
+      }
+      .badge {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.78rem;
+        color: var(--muted);
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .card {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.03),
+            transparent 50%
+          ),
+          var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        padding: 22px;
+      }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+        font-size: 0.95rem;
+      }
+      thead th {
+        color: var(--accent2);
+        font-weight: 700;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .pill {
+        font-size: 0.76rem;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #06122a;
+        text-decoration: none;
+        background: linear-gradient(180deg, var(--accent), #4a8eef);
+        box-shadow: 0 8px 18px rgba(74, 142, 239, 0.25);
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--accent2);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: none;
+      }
+      .subtle {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
   </head>
   <body>
-    <h1>Mémoires Similaires</h1>
-    {% if results %}
-    <table border="1" cellpadding="5" cellspacing="0">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Titre</th>
-          <th>Thème</th>
-          <th>Auteur</th>
-          <th>Université</th>
-          <th>Type</th>
-          <th>Lieu</th>
-          <th>Méthodologie</th>
-          <th>Résultats</th>
-          <th>Score de similarité (contenu)</th>
-          <th>PDF</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for res in results %}
-        <tr>
-          <td>{{ res.id }}</td>
-          <td>{{ res.title }}</td>
-          <td>{{ res.theme }}</td>
-          <td>{{ res.author }}</td>
-          <td>{{ res.university }}</td>
-          <td>{{ res.thesis_type }}</td>
-          <td>{{ res.stage_location }}</td>
-          <td>{{ res.methodology }}</td>
-          <td>{{ res.results }}</td>
-          <td>{{ res.content_score | round(2) }}</td>
-          <td>
-            <a
-              href="{{ url_for('uploaded_file', filename=res.pdf_path) }}"
-              target="_blank"
-              >Voir PDF</a
-            >
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p>Aucun résultat trouvé.</p>
-    {% endif %}
-    <br />
-    <a href="/">Retour</a>
+    <div class="container">
+      <header>
+        <div>
+          <div class="badge">ThesisPlag • Recherche</div>
+          <h1>Mémoires Similaires</h1>
+          <p class="subtle">
+            Résultats trouvés pour votre requête. Sélectionnez-en deux pour comparer.
+          </p>
+        </div>
+        <nav style="display: flex; gap: 20px; align-items: center;">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary" style="text-decoration: none; font-size: 0.9rem;">Accueil</a>
+            <a href="{{ url_for('theses') }}" class="btn btn-secondary" style="text-decoration: none; font-size: 0.9rem;">Tous les mémoires</a>
+        </nav>
+      </header>
+
+      <section class="card">
+        {% if results %}
+        <table aria-label="Résultats de recherche">
+          <thead>
+            <tr>
+              <th style="width: 40px;"></th>
+              <th>ID</th>
+              <th>Titre</th>
+              <th>Auteur</th>
+              <th>Université</th>
+              <th>Type</th>
+              <th>Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for res in results %}
+            <tr>
+              <td>
+                <input type="checkbox" class="compare-check" value="{{ res.id }}" onchange="updateCompareState()">
+              </td>
+              <td>{{ res.id }}</td>
+              <td>{{ res.title }}</td>
+              <td>{{ res.author }}</td>
+              <td><span class="pill">{{ res.university }}</span></td>
+              <td><span class="pill">{{ res.thesis_type }}</span></td>
+              <td>{{ res.content_score | round(2) }}%</td>
+              <td>
+                <a
+                  class="btn btn-secondary"
+                  href="{{ url_for('uploaded_file', filename=res.pdf_path) }}"
+                  target="_blank"
+                  style="padding: 6px 12px; font-size: 0.85rem;"
+                  >Voir PDF</a
+                >
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center; color: var(--muted); padding: 20px;">Aucun résultat trouvé.</p>
+        {% endif %}
+      </section>
+
+      <!-- Floating Compare Button -->
+      <div id="compareBar" style="position: fixed; bottom: 20px; right: 20px; background: var(--card); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; align-items: center; gap: 15px; z-index: 100;">
+        <span id="compareCount" style="font-weight: 600; color: var(--text);">0 sélectionné(s)</span>
+        <button id="compareBtn" class="btn" onclick="goToCompare()">Comparer</button>
+      </div>
+    </div>
+
+    <script>
+      function updateCompareState() {
+        const checks = document.querySelectorAll('.compare-check:checked');
+        const bar = document.getElementById('compareBar');
+        const count = document.getElementById('compareCount');
+        const btn = document.getElementById('compareBtn');
+        
+        if (checks.length > 0) {
+            bar.style.display = 'flex';
+            count.textContent = `${checks.length} sélectionné(s)`;
+        } else {
+            bar.style.display = 'none';
+        }
+
+        if (checks.length === 2) {
+            btn.disabled = false;
+            btn.style.opacity = 1;
+            // Disable other checkboxes
+            document.querySelectorAll('.compare-check:not(:checked)').forEach(c => c.disabled = true);
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = 0.6;
+            // Enable all checkboxes
+            document.querySelectorAll('.compare-check').forEach(c => c.disabled = false);
+        }
+      }
+
+      function goToCompare() {
+        const checks = document.querySelectorAll('.compare-check:checked');
+        if (checks.length !== 2) return;
+        const id1 = checks[0].value;
+        const id2 = checks[1].value;
+        window.location.href = `/compare?id1=${id1}&id2=${id2}`;
+      }
+    </script>
   </body>
 </html>
