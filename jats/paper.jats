@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
+                  "JATS-publishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.2" article-type="other">
+<front>
+<journal-meta>
+<journal-id></journal-id>
+<journal-title-group>
+<journal-title>Journal of Open Source Software</journal-title>
+<abbrev-journal-title>JOSS</abbrev-journal-title>
+</journal-title-group>
+<issn publication-format="electronic">2475-9066</issn>
+<publisher>
+<publisher-name>Open Journals</publisher-name>
+</publisher>
+</journal-meta>
+<article-meta>
+<article-id pub-id-type="publisher-id">0</article-id>
+<article-id pub-id-type="doi">N/A</article-id>
+<title-group>
+<article-title>An Application for Detecting Plagiarism in University
+Theses</article-title>
+</title-group>
+<contrib-group>
+<contrib contrib-type="author">
+<name>
+<surname>Andriantsialo</surname>
+<given-names>Elyah Frisco</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<contrib contrib-type="author">
+<name>
+<surname>Ratianantitra</surname>
+<given-names>Volatiana Marielle</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<contrib contrib-type="author">
+<name>
+<surname>Mahatody</surname>
+<given-names>Thomas</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<aff id="aff-1">
+<institution-wrap>
+<institution>Laboratory for Mathematical and Computer Applied to the
+Development Systems, University of Fianarantsoa,
+Madagascar</institution>
+</institution-wrap>
+</aff>
+</contrib-group>
+<pub-date date-type="pub" publication-format="electronic" iso-8601-date="2025-12-26">
+<day>26</day>
+<month>12</month>
+<year>2025</year>
+</pub-date>
+<volume>¿VOL?</volume>
+<issue>¿ISSUE?</issue>
+<fpage>¿PAGE?</fpage>
+<permissions>
+<copyright-statement>Authors of papers retain copyright and release the
+work under a Creative Commons Attribution 4.0 International License (CC
+BY 4.0)</copyright-statement>
+<copyright-year>1970</copyright-year>
+<copyright-holder>The article authors</copyright-holder>
+<license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/">
+<license-p>Authors of papers retain copyright and release the work under
+a Creative Commons Attribution 4.0 International License (CC BY
+4.0)</license-p>
+</license>
+</permissions>
+<kwd-group kwd-group-type="author">
+<kwd>Python</kwd>
+<kwd>Flask</kwd>
+<kwd>plagiarism detection</kwd>
+<kwd>NLP</kwd>
+<kwd>computer vision</kwd>
+<kwd>academic integrity</kwd>
+</kwd-group>
+</article-meta>
+</front>
+<body>
+<sec id="summary">
+  <title>Summary</title>
+  <p>Academic plagiarism has evolved beyond simple copy-paste text to
+  include complex paraphrasing and the reuse of visual elements like
+  figures and diagrams. To address this, we present a hybrid, multimodal
+  web application designed for contextualized plagiarism detection. The
+  system utilizes a multi-criteria approach, analyzing documents based
+  on six distinct dimensions: Theme, Location, Methodology, Results,
+  Global Content, and Images (THLME-Gre schema).</p>
+  <p>Built with <bold>Flask</bold>, the application leverages advanced
+  semantic models—specifically <bold>Sentence-BERT</bold>
+  (<xref alt="Reimers &amp; Gurevych, 2019" rid="ref-ReimersU003A2019" ref-type="bibr">Reimers
+  &amp; Gurevych, 2019</xref>) for textual analysis and
+  <bold>CLIP</bold> (Contrastive Language-Image Pre-training)
+  (<xref alt="Radford et al., 2021" rid="ref-RadfordU003A2021" ref-type="bibr">Radford
+  et al., 2021</xref>) for visual analysis. It employs a vector database
+  (ChromaDB) to perform efficient Approximate Nearest Neighbor (ANN)
+  searches across large repositories of university theses.</p>
+  <fig>
+    <caption><p>Screenshot of the application interface showing the
+    dashboard and analysis results.</p></caption>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="Application.png" />
+  </fig>
+</sec>
+<sec id="statement-of-need">
+  <title>Statement of Need</title>
+  <p>Ensuring academic integrity is a growing challenge for higher
+  education institutions in Madagascar, particularly at the
+  <bold>University of Fianarantsoa</bold>, which manages over 30,000
+  students across various doctoral schools and departments. Currently,
+  the university lacks a centralized, automated institutional tool for
+  plagiarism detection. Faculty members often rely on manual
+  verification or commercial tools that primarily focus on English
+  content and surface-level text matching.</p>
+  <p>These existing solutions present two major limitations for our
+  context: 1. <bold>Language and Context:</bold> The majority of student
+  theses are written in <bold>French</bold>. Generic tools often
+  struggle to distinguish between legitimate thematic overlap (e.g.,
+  multiple students working on “Web Design” or “Digitalization”) and
+  actual plagiarism. Our system addresses this by explicitly modeling
+  the “Study Location” and “Methodology” as separate semantic criteria,
+  reducing false positives caused by common academic jargon or shared
+  internship locations. 2. <bold>Multimodality:</bold> Traditional tools
+  frequently miss “visual plagiarism,” where students might rewrite the
+  text but copy diagrams, charts, or results directly. By integrating
+  CLIP, our application detects similarities in visual content that
+  text-only tools overlook
+  (<xref alt="Chowdhury &amp; Chellappa, 2016" rid="ref-ChowdhuryU003A2016" ref-type="bibr">Chowdhury
+  &amp; Chellappa, 2016</xref>).</p>
+  <p>This software provides a robust, scalable, and locally deployable
+  solution to enforce academic honesty, specifically tailored to the
+  linguistic and structural needs of Malagasy university research.</p>
+</sec>
+<sec id="implementation-and-architecture">
+  <title>Implementation and Architecture</title>
+  <p>The application follows a modular architecture. The core processing
+  pipeline handles PDF extraction, separating text and images. -
+  <bold>Text</bold> is encoded into dense vectors using
+  <monospace>SentenceTransformer</monospace> to capture deep semantic
+  meaning
+  (<xref alt="Devlin et al., 2019" rid="ref-DevlinU003A2019" ref-type="bibr">Devlin
+  et al., 2019</xref>). - <bold>Images</bold> are processed via
+  <monospace>CLIP</monospace> to project visual data into a shared
+  embedding space. - <bold>Data Storage</bold> is hybrid: metadata and
+  structured criteria (Theme, Location, etc.) are stored in a Relational
+  DBMS, while high-dimensional embeddings are indexed in a Vector
+  Database for real-time retrieval.</p>
+  <fig>
+    <caption><p>System Architecture: Data flow from PDF extraction to
+    hybrid storage (Relational and Vector Database).</p></caption>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="Architecture.png" />
+  </fig>
+  <p>The global similarity score (<inline-formula><alternatives>
+  <tex-math><![CDATA[S_{global}]]></tex-math>
+  <mml:math display="inline" xmlns:mml="http://www.w3.org/1998/Math/MathML"><mml:msub><mml:mi>S</mml:mi><mml:mrow><mml:mi>g</mml:mi><mml:mi>l</mml:mi><mml:mi>o</mml:mi><mml:mi>b</mml:mi><mml:mi>a</mml:mi><mml:mi>l</mml:mi></mml:mrow></mml:msub></mml:math></alternatives></inline-formula>)
+  is computed using an egalitarian weighting model, aggregating cosine
+  similarities from the six defined criteria. This allows for a nuanced
+  assessment, providing decision support thresholds (e.g., &gt;80% for
+  high suspicion) rather than a simple binary judgment.</p>
+</sec>
+</body>
+<back>
+<ref-list>
+  <title></title>
+  <ref id="ref-DevlinU003A2019">
+    <element-citation publication-type="paper-conference">
+      <person-group person-group-type="author">
+        <name><surname>Devlin</surname><given-names>Jacob</given-names></name>
+        <name><surname>Chang</surname><given-names>Ming-Wei</given-names></name>
+        <name><surname>Lee</surname><given-names>Kenton</given-names></name>
+        <name><surname>Toutanova</surname><given-names>Kristina</given-names></name>
+      </person-group>
+      <article-title>BERT: Pre-training of deep bidirectional transformers for language understanding</article-title>
+      <source>Proceedings of NAACL-HLT</source>
+      <year iso-8601-date="2019">2019</year>
+      <uri>https://arxiv.org/abs/1810.04805</uri>
+      <fpage>4171</fpage>
+      <lpage>4186</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-ReimersU003A2019">
+    <element-citation publication-type="paper-conference">
+      <person-group person-group-type="author">
+        <name><surname>Reimers</surname><given-names>Nils</given-names></name>
+        <name><surname>Gurevych</surname><given-names>Iryna</given-names></name>
+      </person-group>
+      <article-title>Sentence-BERT: Sentence embeddings using siamese BERT-networks</article-title>
+      <source>Proceedings of the 2019 conference on empirical methods in natural language processing</source>
+      <year iso-8601-date="2019">2019</year>
+      <uri>https://arxiv.org/abs/1908.10084</uri>
+    </element-citation>
+  </ref>
+  <ref id="ref-RadfordU003A2021">
+    <element-citation publication-type="paper-conference">
+      <person-group person-group-type="author">
+        <name><surname>Radford</surname><given-names>Alec</given-names></name>
+        <name><surname>Kim</surname><given-names>Jong Wook</given-names></name>
+        <name><surname>Hallacy</surname><given-names>Chris</given-names></name>
+        <name><surname>Ramesh</surname><given-names>Aditya</given-names></name>
+        <name><surname>Goh</surname><given-names>Gabriel</given-names></name>
+        <name><surname>Agarwal</surname><given-names>Sandhini</given-names></name>
+        <name><surname>Sastry</surname><given-names>Girish</given-names></name>
+        <name><surname>Askell</surname><given-names>Amanda</given-names></name>
+        <name><surname>Mishkin</surname><given-names>Pamela</given-names></name>
+        <name><surname>Clark</surname><given-names>Jack</given-names></name>
+        <name><surname>others</surname></name>
+      </person-group>
+      <article-title>Learning transferable visual models from natural language supervision</article-title>
+      <source>International conference on machine learning</source>
+      <publisher-name>PMLR</publisher-name>
+      <year iso-8601-date="2021">2021</year>
+      <uri>https://arxiv.org/abs/2103.00020</uri>
+      <fpage>8748</fpage>
+      <lpage>8763</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-ChowdhuryU003A2016">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Chowdhury</surname><given-names>A. K.</given-names></name>
+        <name><surname>Chellappa</surname><given-names>R.</given-names></name>
+      </person-group>
+      <article-title>Visual plagiarism: A new challenge in multimedia forensics</article-title>
+      <source>IEEE Transactions on Information Forensics and Security</source>
+      <year iso-8601-date="2016">2016</year>
+      <volume>11</volume>
+      <issue>8</issue>
+      <fpage>1709</fpage>
+      <lpage>1724</lpage>
+    </element-citation>
+  </ref>
+</ref-list>
+</back>
+</article>
