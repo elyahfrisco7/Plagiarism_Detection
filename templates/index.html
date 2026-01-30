@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <title>Insertion d'un Mémoire Académique</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Quill.js CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <style>
       :root {
         --bg: #0b1020;
@@ -16,6 +17,42 @@
         --danger: #ff7a7a;
         --ring: 0 0 0 3px rgba(106, 167, 255, 0.35);
         --radius: 16px;
+      }
+      
+      /* Light theme variables */
+      [data-theme="light"] {
+        --bg: #f5f7fa;
+        --card: #ffffff;
+        --accent: #4a8eef;
+        --accent-2: #2563eb;
+        --text: #1a202c;
+        --muted: #4a5568;
+        --danger: #e53e3e;
+        --ring: 0 0 0 3px rgba(74, 142, 239, 0.35);
+      }
+      
+      /* Theme toggle button */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--text);
+        padding: 12px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.3rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+      .theme-toggle:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: scale(1.05);
       }
       * {
         box-sizing: border-box;
@@ -63,7 +100,7 @@
       }
       @media (min-width: 920px) {
         .grid {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1.5fr 1fr; /* Form card is now wider */
         }
       }
       .card {
@@ -88,51 +125,91 @@
       }
       form {
         display: grid;
-        gap: 14px;
+        gap: 20px;
       }
       .row {
         display: grid;
-        gap: 12px;
+        gap: 16px;
       }
-      @media (min-width: 700px) {
-        .row.two {
-          grid-template-columns: 1fr 1fr;
-        }
+      /* All inputs full width for maximum size */
+      .row.two {
+        grid-template-columns: 1fr; /* Full width instead of two columns */
       }
       label {
         display: block;
         font-weight: 600;
-        font-size: 0.92rem;
-        margin-bottom: 6px;
+        font-size: 1rem;
+        margin-bottom: 8px;
         color: var(--muted);
       }
+      /* Grand inputs styling */
       input[type="text"],
       input[type="file"],
-      select,
-      textarea {
+      select {
         width: 100%;
+        min-width: 0; /* Prevent expansion */
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.12);
         color: var(--text);
-        padding: 12px 14px;
+        padding: 18px 20px;
+        font-size: 1.1rem;
         border-radius: 12px;
         outline: none;
-        transition: border 0.2s, box-shadow 0.2s, background 0.2s,
-          transform 0.02s;
-      }
-      textarea {
-        min-height: 120px;
-        resize: vertical;
+        transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+        /* Make inputs scrollable vertically only */
+        overflow-x: hidden; /* No horizontal scroll */
+        overflow-y: auto;
+        max-height: 150px;
+        white-space: normal; /* Allow wrapping */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-all; /* Force break long words */
       }
       input[type="file"] {
-        padding: 10px;
+        padding: 14px;
       }
       input:focus,
-      select:focus,
-      textarea:focus {
+      select:focus {
         border-color: var(--accent);
         box-shadow: var(--ring);
+        background: rgba(255, 255, 255, 0.07);
       }
+      
+      /* Quill Editor Customization for Dark Theme */
+      .ql-toolbar.ql-snow {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px 12px 0 0;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .ql-container.ql-snow {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        border-radius: 0 0 12px 12px;
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text);
+        font-family: Inter, sans-serif;
+        font-size: 1rem;
+        margin-bottom: 20px; /* Add space between editors */
+      }
+      .ql-editor {
+        min-height: 200px;
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: hidden; /* No horizontal scroll */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-all; /* Force break long words */
+      }
+      /* Quill toolbar icons color override */
+      .ql-snow .ql-stroke {
+        stroke: var(--muted) !important;
+      }
+      .ql-snow .ql-fill {
+        fill: var(--muted) !important;
+      }
+      .ql-snow .ql-picker {
+        color: var(--muted) !important;
+      }
+
       .hint {
         margin-top: 6px;
         font-size: 0.82rem;
@@ -143,17 +220,17 @@
         gap: 12px;
         align-items: center;
         justify-content: flex-end;
-        margin-top: 6px;
+        margin-top: 10px;
       }
       .btn {
         appearance: none;
         border: 0;
-        padding: 12px 18px;
+        padding: 16px 28px;
         border-radius: 12px;
         font-weight: 600;
+        font-size: 1.05rem;
         cursor: pointer;
-        transition: transform 0.03s ease, box-shadow 0.2s ease,
-          opacity 0.2s ease;
+        transition: transform 0.03s ease, box-shadow 0.2s ease;
       }
       .btn:active {
         transform: translateY(1px);
@@ -190,12 +267,6 @@
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.03);
       }
-      .kicker {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
     </style>
   </head>
   <body>
@@ -206,7 +277,7 @@
           <h1>Insertion d'un Mémoire Académique</h1>
           <p class="subtitle">
             Renseignez les métadonnées et téléversez le PDF. Le système extraira
-            le texte et les éléments visuels pour l’analyse sémantique.
+            le texte et les éléments visuels pour l'analyse sémantique.
           </p>
         </div>
         <nav style="display: flex; gap: 20px; align-items: center;">
@@ -215,54 +286,35 @@
         </nav>
       </header>
 
+      <!-- Theme toggle button (fixed position) -->
+      <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème">
+        <span id="theme-icon">🌙</span>
+      </button>
+
       <div class="grid">
         <!-- Carte : Formulaire d'upload -->
         <section class="card">
-          <h2>Formulaire de fiche Tecnique</h2>
-          <form action="/upload" method="POST" enctype="multipart/form-data">
+          <h2>Formulaire de fiche Technique</h2>
+          <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
             <div class="row two">
               <div>
                 <label for="title">Titre du thème</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  required
-                  placeholder="Ex. Système de détection de plagiat multimodal"
-                />
+                <input type="text" id="title" name="title" required />
               </div>
               <div>
                 <label for="theme">Thème / Sujet</label>
-                <input
-                  type="text"
-                  id="theme"
-                  name="theme"
-                  required
-                  placeholder="Ex. Intelligence artificielle, Deep Learning"
-                />
+                <input type="text" id="theme" name="theme" required />
               </div>
             </div>
 
             <div class="row two">
               <div>
                 <label for="author">Nom et Prénom</label>
-                <input
-                  type="text"
-                  id="author"
-                  name="author"
-                  required
-                  placeholder="Ex. Andriantsialo Elyah Frisco"
-                />
+                <input type="text" id="author" name="author" required />
               </div>
               <div>
                 <label for="university">Université d'accueil</label>
-                <input
-                  type="text"
-                  id="university"
-                  name="university"
-                  required
-                  placeholder="Ex. ENI - Université de Fianarantsoa"
-                />
+                <input type="text" id="university" name="university" required />
               </div>
             </div>
 
@@ -276,56 +328,30 @@
               </div>
               <div>
                 <label for="stage_location">Lieu de stage / d'étude</label>
-                <input
-                  type="text"
-                  id="stage_location"
-                  name="stage_location"
-                  required
-                  placeholder="Ex. Zomatel, Laboratoire, etc."
-                />
+                <input type="text" id="stage_location" name="stage_location" required />
               </div>
             </div>
 
             <div>
               <label for="methodology">Méthodologie et objectifs</label>
-              <textarea
-                id="methodology"
-                name="methodology"
-                rows="4"
-                placeholder="Décrivez brièvement les approches, protocoles, jeux de données, objectifs et indicateurs..."
-              ></textarea>
+              <div id="editor-methodology"></div>
+              <input type="hidden" name="methodology" id="methodology">
             </div>
 
-            <div>
-              <label for="results"
-                >Résultats (technologies, outils, etc.)</label
-              >
-              <textarea
-                id="results"
-                name="results"
-                rows="4"
-                placeholder="Synthèse des principaux résultats, contributions, outils et limites..."
-              ></textarea>
+            <div style="margin-top: 80px;">
+              <label for="results">Résultats (technologies, outils, etc.)</label>
+              <div id="editor-results"></div>
+              <input type="hidden" name="results" id="results">
             </div>
 
             <div>
               <label for="pdf_file">Fichier PDF</label>
-              <input
-                type="file"
-                id="pdf_file"
-                name="pdf_file"
-                accept="application/pdf"
-                required
-              />
-              <div class="hint">
-                Formats acceptés : PDF
-              </div>
+              <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" required />
+              <div class="hint">Formats acceptés : PDF</div>
             </div>
 
             <div class="actions">
-              <button class="btn btn-secondary" type="reset">
-                Réinitialiser
-              </button>
+              <button class="btn btn-secondary" type="reset">Réinitialiser</button>
               <button class="btn btn-primary" type="submit">Envoyer</button>
             </div>
           </form>
@@ -337,18 +363,9 @@
           <form action="/search" method="GET">
             <div>
               <label for="query">Recherche par contenu / thème</label>
-              <input
-                type="text"
-                id="query"
-                name="query"
-                required
-                placeholder="Ex. Détection de plagiat, IA, méthodologie, etc."
-              />
+              <input type="text" id="query" name="query" required placeholder="Ex. Détection de plagiat, IA, méthodologie, etc." />
             </div>
-            <div
-              class="actions"
-              style="justify-content: flex-start; margin-top: 6px"
-            >
+            <div class="actions" style="justify-content: flex-start; margin-top: 6px">
               <button class="btn btn-primary" type="submit">Rechercher</button>
             </div>
             <p class="hint">
@@ -356,11 +373,58 @@
               sémantique », « deep learning », « figures similaires »).
             </p>
           </form>
-
           <hr />
-         
         </section>
       </div>
     </div>
+
+    <!-- Quill JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+      // Initialize Quill editors
+      var quillMethodology = new Quill('#editor-methodology', {
+        theme: 'snow',
+        placeholder: 'Décrivez brièvement les approches, protocoles, jeux de données, objectifs et indicateurs...'
+      });
+
+      var quillResults = new Quill('#editor-results', {
+        theme: 'snow',
+        placeholder: 'Synthèse des principaux résultats, contributions, outils et limites...'
+      });
+
+      // Form submission handler
+      var form = document.querySelector('#uploadForm');
+      form.onsubmit = function() {
+        var methodologyContent = document.querySelector('#methodology');
+        var resultsContent = document.querySelector('#results');
+        
+        // Saving text content
+        methodologyContent.value = quillMethodology.getText();
+        resultsContent.value = quillResults.getText();
+      };
+
+      // Theme toggle functionality
+      function toggleTheme() {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        const themeIcon = document.getElementById('theme-icon');
+        
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        // Update icon
+        themeIcon.textContent = newTheme === 'light' ? '☀️' : '🌙';
+      }
+
+      // Load saved theme on page load
+      (function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        const themeIcon = document.getElementById('theme-icon');
+        
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeIcon.textContent = savedTheme === 'light' ? '☀️' : '🌙';
+      })();
+    </script>
   </body>
 </html>
