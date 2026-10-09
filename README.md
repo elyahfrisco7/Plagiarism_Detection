@@ -4,7 +4,7 @@ ThesisPlag is a powerful Flask-based application designed to detect similarities
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Multi-Criteria Comparison**: Compare theses based on theme, location, methodology, results, and full content.
 - **Visual Similarity**: Extract and compare images from PDFs using OpenAI's CLIP model.
@@ -22,7 +22,7 @@ ThesisPlag is a powerful Flask-based application designed to detect similarities
 
 ---
 
-## 📦 Installation
+##  Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -59,7 +59,7 @@ pip install git+https://github.com/openai/CLIP.git
 
 ---
 
-## 🗄️ Database Setup
+##  Database Setup
 
 ### 1. Create Database and Table
 Run the following SQL script in your MySQL client (e.g., phpMyAdmin, MySQL Workbench):
@@ -97,7 +97,7 @@ DATABASE_URI = 'mysql+pymysql://username:password@127.0.0.1:3306/thesis_db'
 
 ---
 
-## 🏃 Running the Application
+##  Running the Application
 
 Start the Flask development server:
 ```bash
@@ -107,7 +107,7 @@ The application will be available at `http://127.0.0.1:5000`.
 
 ---
 
-## 📖 Usage
+##  Usage
 
 - **Upload**: Use the home page to upload a new thesis PDF and fill in the metadata.
 - **Search**: Enter a natural language query in the search bar to find similar theses.
@@ -116,7 +116,7 @@ The application will be available at `http://127.0.0.1:5000`.
 
 ---
 
-## 🧪 Running Tests
+##  Running Tests
 
 To run the automated unit tests:
 ```bash
@@ -127,3 +127,4 @@ pytest tests/
 
 ## 📄 License
 This project is for academic research purposes.
+
