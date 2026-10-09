@@ -1,6 +1,7 @@
 # app/routes.py
 import os
 import json
+import tempfile
 import numpy as np
 from flask import request, render_template, redirect, url_for, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
@@ -9,6 +10,7 @@ from app.models import Thesis, SessionLocal
 from app.config import UPLOAD_FOLDER, EMBEDDING_DIM, get_sentence_model, get_collection
 from app.utils import extract_text_from_pdf, extract_images_from_pdf, get_image_embedding
 from app.controllers import compute_similarity_breakdown
+from app.ai_extractor import extract_metadata_with_ai, AIExtractionError
 
 def register_routes(app):
     """Register all Flask routes"""
@@ -106,6 +108,36 @@ def register_routes(app):
         )
 
         return redirect(url_for('index'))
+
+    @app.route('/api/extract-metadata', methods=['POST'])
+    def api_extract_metadata():
+        """
+        Reçoit un PDF, en extrait le texte (sans le stocker définitivement),
+        puis demande à Claude Haiku 4.5 de déduire les champs de la fiche
+        technique (titre, thème, auteur, université, type, lieu, méthodologie,
+        résultats). Utilisé pour l'auto-remplissage du formulaire d'upload.
+        """
+        file = request.files.get('pdf_file')
+        if not file:
+            return jsonify({"error": "Aucun fichier fourni"}), 400
+
+        tmp_path = None
+        try:
+            suffix = os.path.splitext(secure_filename(file.filename or ""))[1] or ".pdf"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp)
+                tmp_path = tmp.name
+
+            full_text = extract_text_from_pdf(tmp_path)
+            metadata = extract_metadata_with_ai(full_text)
+            return jsonify(metadata.model_dump())
+        except AIExtractionError as e:
+            return jsonify({"error": str(e)}), 502
+        except Exception as e:
+            return jsonify({"error": f"Erreur inattendue : {e}"}), 500
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
     @app.route('/compare', methods=['GET'])
     def compare():

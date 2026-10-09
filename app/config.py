@@ -2,8 +2,12 @@
 import os
 import torch
 import clip
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from chromadb import PersistentClient
+
+# Charge le fichier .env (ANTHROPIC_API_KEY, etc.) à la racine du projet.
+load_dotenv()
 
 # ----------------------------------------------------------------------------
 # Flask Configuration

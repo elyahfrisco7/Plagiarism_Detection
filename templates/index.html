@@ -27,31 +27,55 @@
       <span class="card__icon">{{ icons.icon('document', 19) }}</span>
       <div>
         <h2 class="card__title">Fiche technique du mémoire</h2>
-        <p class="card__subtitle">Tous les champs marqués d'un astérisque sont obligatoires.</p>
+        <p class="card__subtitle">Déposez le PDF : l'IA remplit les champs ci-dessous, vous les vérifiez ensuite.</p>
       </div>
     </div>
 
     <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data" novalidate>
       <div class="form-section">
+        <h3 class="form-section__title">Document</h3>
+        <div class="field">
+          <label for="pdf_file">{{ icons.icon('file-pdf', 15) }} Fichier PDF <span class="req">*</span></label>
+          <label class="file-drop" id="fileDrop" for="pdf_file">
+            <span class="file-drop__icon">{{ icons.icon('upload', 20) }}</span>
+            <span class="file-drop__text">
+              <span class="file-drop__title" id="fileDropTitle">Cliquez ou déposez un fichier PDF ici</span>
+              <span class="file-drop__hint">Format accepté : .pdf — taille raisonnable recommandée</span>
+            </span>
+            <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" required />
+          </label>
+
+          <div id="aiStatus" class="loading" style="display: none; margin-top: 14px;">
+            <div class="spinner"></div>
+            <div id="aiStatusText">Analyse du PDF par l'IA en cours…</div>
+          </div>
+          <p id="aiResultMsg" class="help" style="margin-top: 10px;"></p>
+          <p class="hint" style="margin-top: 10px;">
+            Déposez d'abord le PDF : l'IA analyse le document et pré-remplit les champs ci-dessous.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-section">
         <h3 class="form-section__title">Identification</h3>
         <div class="field-row field-row--2">
           <div class="field">
             <label for="title">{{ icons.icon('document', 15) }} Titre du thème <span class="req">*</span></label>
-            <input type="text" id="title" name="title" placeholder="Ex. Détection automatique du plagiat académique" required />
+            <input type="text" id="title" name="title" placeholder="Rempli automatiquement après analyse du PDF" required disabled />
           </div>
           <div class="field">
             <label for="theme">{{ icons.icon('tag', 15) }} Thème / sujet <span class="req">*</span></label>
-            <input type="text" id="theme" name="theme" placeholder="Ex. Intelligence artificielle, NLP" required />
+            <input type="text" id="theme" name="theme" placeholder="Rempli automatiquement après analyse du PDF" required disabled />
           </div>
         </div>
         <div class="field-row field-row--2">
           <div class="field">
             <label for="author">{{ icons.icon('user', 15) }} Nom et prénom <span class="req">*</span></label>
-            <input type="text" id="author" name="author" placeholder="Ex. Rakoto Jean" required />
+            <input type="text" id="author" name="author" placeholder="Rempli automatiquement après analyse du PDF" required disabled />
           </div>
           <div class="field">
             <label for="university">{{ icons.icon('building', 15) }} Université d'accueil <span class="req">*</span></label>
-            <input type="text" id="university" name="university" placeholder="Ex. Université de Fianarantsoa" required />
+            <input type="text" id="university" name="university" placeholder="Rempli automatiquement après analyse du PDF" required disabled />
           </div>
         </div>
       </div>
@@ -61,14 +85,14 @@
         <div class="field-row field-row--2">
           <div class="field">
             <label for="thesis_type">{{ icons.icon('flask', 15) }} Type de mémoire</label>
-            <select id="thesis_type" name="thesis_type">
+            <select id="thesis_type" name="thesis_type" disabled>
               <option value="research">Recherche</option>
               <option value="professional">Professionnel / Stage</option>
             </select>
           </div>
           <div class="field">
             <label for="stage_location">{{ icons.icon('pin', 15) }} Lieu de stage / d'étude <span class="req">*</span></label>
-            <input type="text" id="stage_location" name="stage_location" placeholder="Ex. LMAD, Fianarantsoa" required />
+            <input type="text" id="stage_location" name="stage_location" placeholder="Rempli automatiquement après analyse du PDF" required disabled />
           </div>
         </div>
 
@@ -91,24 +115,9 @@
         </div>
       </div>
 
-      <div class="form-section">
-        <h3 class="form-section__title">Document</h3>
-        <div class="field">
-          <label for="pdf_file">{{ icons.icon('file-pdf', 15) }} Fichier PDF <span class="req">*</span></label>
-          <label class="file-drop" id="fileDrop" for="pdf_file">
-            <span class="file-drop__icon">{{ icons.icon('upload', 20) }}</span>
-            <span class="file-drop__text">
-              <span class="file-drop__title" id="fileDropTitle">Cliquez ou déposez un fichier PDF ici</span>
-              <span class="file-drop__hint">Format accepté : .pdf — taille raisonnable recommandée</span>
-            </span>
-            <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" required />
-          </label>
-        </div>
-      </div>
-
       <div class="actions">
         <button class="btn btn-secondary" type="reset">{{ icons.icon('reset', 16) }} Réinitialiser</button>
-        <button class="btn btn-primary" type="submit">{{ icons.icon('check', 16) }} Envoyer le mémoire</button>
+        <button class="btn btn-primary" type="submit" id="submitBtn" disabled>{{ icons.icon('check', 16) }} Envoyer le mémoire</button>
       </div>
     </form>
   </section>
@@ -169,7 +178,80 @@
     document.querySelector("#results").value = quillResults.getText();
   };
 
-  // File drop zone: show the selected filename and drag feedback
+  // --- Auto-remplissage IA -------------------------------------------------
+  // Tous les champs (sauf le dépôt du PDF) restent désactivés tant que
+  // l'extraction automatique n'a pas renvoyé de résultat (succès ou échec).
+  var AUTOFILL_FIELD_IDS = ["title", "theme", "author", "university", "stage_location"];
+  var thesisTypeSelect = document.getElementById("thesis_type");
+  var submitBtn = document.getElementById("submitBtn");
+  var aiStatus = document.getElementById("aiStatus");
+  var aiStatusText = document.getElementById("aiStatusText");
+  var aiResultMsg = document.getElementById("aiResultMsg");
+
+  function setFormEnabled(enabled) {
+    AUTOFILL_FIELD_IDS.forEach(function (id) {
+      document.getElementById(id).disabled = !enabled;
+    });
+    thesisTypeSelect.disabled = !enabled;
+    submitBtn.disabled = !enabled;
+    quillMethodology.enable(enabled);
+    quillResults.enable(enabled);
+  }
+  setFormEnabled(false);
+
+  async function analyzeWithAI(file) {
+    aiResultMsg.textContent = "";
+    aiStatusText.textContent =
+      "Analyse du PDF par l'IA en cours… (peut prendre jusqu'à une minute pour un document volumineux)";
+    aiStatus.style.display = "flex";
+    document.getElementById("pdf_file").disabled = true;
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, 90000); // 90s de marge
+
+    try {
+      var fd = new FormData();
+      fd.append("pdf_file", file);
+      var r = await fetch("/api/extract-metadata", {
+        method: "POST",
+        body: fd,
+        signal: controller.signal,
+      });
+      var data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Échec de l'analyse du document");
+
+      document.getElementById("title").value = data.title || "";
+      document.getElementById("theme").value = data.theme || "";
+      document.getElementById("author").value = data.author || "";
+      document.getElementById("university").value = data.university || "";
+      document.getElementById("stage_location").value = data.stage_location || "";
+      thesisTypeSelect.value = data.thesis_type === "professional" ? "professional" : "research";
+      quillMethodology.setText(data.methodology || "");
+      quillResults.setText(data.results || "");
+
+      setFormEnabled(true);
+      aiResultMsg.textContent =
+        "✓ Champs remplis automatiquement par l'IA — vérifiez-les et corrigez si besoin avant l'envoi.";
+      aiResultMsg.style.color = "var(--ok)";
+    } catch (e) {
+      setFormEnabled(true); // on ne bloque pas l'utilisateur : saisie manuelle de secours
+      var reason =
+        e.name === "AbortError"
+          ? "le serveur met trop de temps à répondre"
+          : e.message === "Failed to fetch"
+          ? "le serveur est inaccessible (redémarrez l'application si le problème persiste)"
+          : e.message;
+      aiResultMsg.textContent =
+        "Analyse automatique indisponible (" + reason + "). Vous pouvez compléter les champs manuellement.";
+      aiResultMsg.style.color = "var(--bad)";
+    } finally {
+      clearTimeout(timeoutId);
+      aiStatus.style.display = "none";
+      document.getElementById("pdf_file").disabled = false;
+    }
+  }
+
+  // File drop zone: show the selected filename, drag feedback, and trigger the AI analysis
   (function () {
     var drop = document.getElementById("fileDrop");
     var input = document.getElementById("pdf_file");
@@ -187,7 +269,9 @@
     }
 
     input.addEventListener("change", function () {
-      setFile(input.files && input.files[0] ? input.files[0].name : "");
+      var file = input.files && input.files[0];
+      setFile(file ? file.name : "");
+      if (file) analyzeWithAI(file);
     });
 
     ["dragenter", "dragover"].forEach(function (evt) {
@@ -203,15 +287,23 @@
       });
     });
     drop.addEventListener("drop", function (e) {
+      e.preventDefault();
+      drop.classList.remove("is-dragover");
       if (e.dataTransfer && e.dataTransfer.files.length) {
         input.files = e.dataTransfer.files;
-        setFile(e.dataTransfer.files[0].name);
+        var file = e.dataTransfer.files[0];
+        setFile(file.name);
+        analyzeWithAI(file);
       }
     });
 
     form.addEventListener("reset", function () {
       setTimeout(function () {
         setFile("");
+        setFormEnabled(false);
+        aiResultMsg.textContent = "";
+        quillMethodology.setText("");
+        quillResults.setText("");
       }, 0);
     });
   })();
