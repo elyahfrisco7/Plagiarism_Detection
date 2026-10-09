@@ -117,7 +117,10 @@
 
       <div class="actions">
         <button class="btn btn-secondary" type="reset">{{ icons.icon('reset', 16) }} Réinitialiser</button>
-        <button class="btn btn-primary" type="submit" id="submitBtn" disabled>{{ icons.icon('check', 16) }} Envoyer le mémoire</button>
+        <button class="btn btn-primary" type="submit" id="submitBtn" disabled>
+          <span id="submitBtnIcon">{{ icons.icon('check', 16) }}</span>
+          <span id="submitBtnLabel">Envoyer le mémoire</span>
+        </button>
       </div>
     </form>
   </section>
@@ -155,6 +158,18 @@
     </div>
   </section>
 </div>
+
+<!-- Overlay plein écran pendant l'envoi final (extraction, embeddings, indexation) -->
+<div id="submitOverlay" class="overlay">
+  <div class="card overlay__card">
+    <div class="overlay__spinner"></div>
+    <p class="overlay__title">Envoi du mémoire en cours…</p>
+    <p class="overlay__text">
+      Extraction du contenu, calcul des embeddings (texte et images) et
+      indexation sémantique — cela peut prendre jusqu'à une minute.
+    </p>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -173,10 +188,28 @@
   });
 
   var form = document.querySelector("#uploadForm");
-  form.onsubmit = function () {
+  var submitOverlay = document.getElementById("submitOverlay");
+  var submitBtnLabel = document.getElementById("submitBtnLabel");
+  var formSubmitting = false;
+
+  form.addEventListener("submit", function (e) {
+    if (formSubmitting) {
+      // Garde-fou supplémentaire : ignore tout second déclenchement de l'envoi.
+      e.preventDefault();
+      return;
+    }
+    formSubmitting = true;
+
     document.querySelector("#methodology").value = quillMethodology.getText();
     document.querySelector("#results").value = quillResults.getText();
-  };
+
+    // Désactive le bouton (empêche le double-clic) et affiche un retour
+    // visuel clair : l'envoi déclenche extraction + embeddings + indexation,
+    // ce qui peut prendre du temps.
+    submitBtn.disabled = true;
+    submitBtnLabel.textContent = "Envoi en cours…";
+    submitOverlay.classList.add("is-visible");
+  });
 
   // --- Auto-remplissage IA -------------------------------------------------
   // Tous les champs (sauf le dépôt du PDF) restent désactivés tant que
@@ -307,5 +340,17 @@
       }, 0);
     });
   })();
+
+  // Filet de sécurité : si l'utilisateur revient sur cette page via le
+  // bouton "précédent" du navigateur (restauration depuis le bfcache), on
+  // s'assure que l'overlay/bouton d'envoi ne restent pas bloqués en l'état.
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) {
+      formSubmitting = false;
+      submitOverlay.classList.remove("is-visible");
+      submitBtnLabel.textContent = "Envoyer le mémoire";
+      submitBtn.disabled = false;
+    }
+  });
 </script>
 {% endblock %}
