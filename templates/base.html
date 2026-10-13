@@ -43,6 +43,9 @@
             {{ icons.icon('library', 16) }} Mémoires
           </a>
         </nav>
+        <a href="{{ url_for('settings') }}" class="theme-toggle" title="Paramètres de pondération" aria-label="Paramètres" style="{{ 'color: var(--accent); border-color: var(--border-strong);' if request.endpoint == 'settings' }}">
+          {{ icons.icon('settings', 18) }}
+        </a>
         <button class="theme-toggle" onclick="toggleTheme()" title="Changer de thème" aria-label="Changer de thème">
           <span id="theme-icon">{{ icons.icon('moon', 18) }}</span>
         </button>

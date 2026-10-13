@@ -2,6 +2,7 @@
 import json
 import numpy as np
 from app.config import EMBEDDING_DIM
+from app.weights import get_weights
 
 def compute_cosine_similarity(vec1, vec2):
     """Calcule la similarité cosinus entre deux vecteurs numpy."""
@@ -13,58 +14,16 @@ def compute_cosine_similarity(vec1, vec2):
         return 0.0
     return np.dot(vec1, vec2) / (norm1 * norm2)
 
-def compute_global_similarity(thesis_a, thesis_b):
+def compute_similarity_breakdown(thesis_a, thesis_b):
     """
-    Calcule une similarité globale entre deux mémoires en combinant :
-      - Thème
-      - Lieu de stage/d'étude
-      - Méthodologie
-      - Résultats
-      - Contenu complet
-      - Images
-    Chaque critère a un poids de 1/6 => somme = 1
+    Retourne le détail des similarités par critère + le score global (%).
+
+    Les 6 critères (Thème, Lieu de stage/d'étude, Méthodologie, Résultats,
+    Contenu complet, Images) sont combinés selon une pondération configurable
+    (voir app/weights.py et la page /settings) : par défaut, poids égal de
+    1/6 chacun, mais ajustable sans redéploiement.
     """
     # Récupération des embeddings depuis la base (JSON -> numpy array)
-    theme_emb_a = np.array(json.loads(thesis_a.theme_embedding))
-    theme_emb_b = np.array(json.loads(thesis_b.theme_embedding))
-
-    stage_emb_a = np.array(json.loads(thesis_a.stage_embedding))
-    stage_emb_b = np.array(json.loads(thesis_b.stage_embedding))
-
-    meth_emb_a  = np.array(json.loads(thesis_a.methodology_embedding))
-    meth_emb_b  = np.array(json.loads(thesis_b.methodology_embedding))
-
-    results_emb_a = np.array(json.loads(thesis_a.results_embedding))
-    results_emb_b = np.array(json.loads(thesis_b.results_embedding))
-
-    content_emb_a = np.array(json.loads(thesis_a.content_embedding))
-    content_emb_b = np.array(json.loads(thesis_b.content_embedding))
-
-    images_emb_a = np.array(json.loads(thesis_a.images_embedding)) if thesis_a.images_embedding else np.zeros(EMBEDDING_DIM)
-    images_emb_b = np.array(json.loads(thesis_b.images_embedding)) if thesis_b.images_embedding else np.zeros(EMBEDDING_DIM)
-
-    # Calcul de la similarité pour chaque critère
-    theme_sim = compute_cosine_similarity(theme_emb_a, theme_emb_b)
-    location_sim = compute_cosine_similarity(stage_emb_a, stage_emb_b)
-    meth_sim = compute_cosine_similarity(meth_emb_a, meth_emb_b)
-    results_sim = compute_cosine_similarity(results_emb_a, results_emb_b)
-    content_sim = compute_cosine_similarity(content_emb_a, content_emb_b)
-    images_sim = compute_cosine_similarity(images_emb_a, images_emb_b)
-
-    # Poids de 1/6 par critère => total 1
-    overall = (
-        (1/6)*theme_sim +
-        (1/6)*location_sim +
-        (1/6)*meth_sim +
-        (1/6)*results_sim +
-        (1/6)*content_sim +
-        (1/6)*images_sim
-    )
-    return overall * 100
-
-def compute_similarity_breakdown(thesis_a, thesis_b):
-    """Retourne le détail des similarités par critère + le score global (%)"""
-    # Embeddings (JSON -> np.array)
     theme_emb_a = np.array(json.loads(thesis_a.theme_embedding))
     theme_emb_b = np.array(json.loads(thesis_b.theme_embedding))
 
@@ -92,6 +51,13 @@ def compute_similarity_breakdown(thesis_a, thesis_b):
         "content":     compute_cosine_similarity(content_emb_a, content_emb_b),
         "images":      compute_cosine_similarity(images_emb_a, images_emb_b),
     }
-    # Moyenne pondérée (1/6 chacun) -> %
-    overall = sum(sims.values()) / 6.0 * 100.0
+
+    # Moyenne pondérée (poids configurables, somme = 1) -> %
+    weights = get_weights()
+    overall = sum(sims[c] * weights.get(c, 0.0) for c in sims) * 100.0
     return sims, overall
+
+def compute_global_similarity(thesis_a, thesis_b):
+    """Ne renvoie que le score global (%) ; voir compute_similarity_breakdown pour le détail par critère."""
+    _, overall = compute_similarity_breakdown(thesis_a, thesis_b)
+    return overall

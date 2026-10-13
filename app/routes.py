@@ -11,6 +11,7 @@ from app.config import UPLOAD_FOLDER, EMBEDDING_DIM, get_sentence_model, get_col
 from app.utils import extract_text_from_pdf, extract_images_from_pdf, get_image_embedding
 from app.controllers import compute_similarity_breakdown
 from app.ai_extractor import extract_metadata_with_ai, AIExtractionError
+from app.weights import CRITERIA, CRITERIA_LABELS, CRITERIA_ICONS, get_weights, save_weights, reset_weights, is_default
 
 def register_routes(app):
     """Register all Flask routes"""
@@ -108,6 +109,36 @@ def register_routes(app):
         )
 
         return redirect(url_for('index'))
+
+    @app.route('/settings', methods=['GET'])
+    def settings():
+        """
+        Page de configuration de la pondération des 6 critères de similarité
+        (Thème, Lieu de stage, Méthodologie, Résultats, Contenu, Images).
+        Par défaut : poids égal (1/6 chacun) ; modifiable et persisté dans
+        weights_config.json (voir app/weights.py).
+        """
+        return render_template(
+            'settings.html',
+            criteria=CRITERIA,
+            labels=CRITERIA_LABELS,
+            crit_icons=CRITERIA_ICONS,
+            weights=get_weights(),
+            is_default=is_default(),
+            saved=request.args.get('saved'),
+            reset=request.args.get('reset'),
+        )
+
+    @app.route('/settings', methods=['POST'])
+    def settings_save():
+        action = request.form.get('action')
+        if action == 'reset':
+            reset_weights()
+            return redirect(url_for('settings', reset=1))
+
+        raw_weights = {c: request.form.get(c, 0) for c in CRITERIA}
+        save_weights(raw_weights)
+        return redirect(url_for('settings', saved=1))
 
     @app.route('/api/extract-metadata', methods=['POST'])
     def api_extract_metadata():
@@ -238,6 +269,41 @@ def register_routes(app):
         items = session.query(Thesis).order_by(Thesis.id.desc()).all()
         session.close()
         return render_template('theses.html', theses=items)
+
+    @app.route('/api/theses/<int:thesis_id>', methods=['DELETE'])
+    def delete_thesis(thesis_id):
+        """
+        Supprime définitivement un mémoire : la ligne MySQL, son entrée dans
+        l'index ChromaDB (recherche sémantique) et le fichier PDF sur disque.
+        """
+        session = SessionLocal()
+        thesis = session.query(Thesis).filter(Thesis.id == thesis_id).first()
+        if not thesis:
+            session.close()
+            return jsonify({"error": "Mémoire introuvable"}), 404
+
+        pdf_path = thesis.pdf_path
+        session.delete(thesis)
+        session.commit()
+        session.close()
+
+        # Retire l'entrée de ChromaDB (ne doit pas faire échouer la suppression
+        # si l'index ne la contient pas / est indisponible).
+        try:
+            get_collection().delete(ids=[str(thesis_id)])
+        except Exception as e:
+            print(f"Avertissement : suppression ChromaDB échouée pour l'id {thesis_id}: {e}")
+
+        # Supprime le fichier PDF associé.
+        if pdf_path:
+            file_path = os.path.join(UPLOAD_FOLDER, pdf_path)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except OSError as e:
+                    print(f"Avertissement : suppression du fichier {file_path} échouée : {e}")
+
+        return jsonify({"success": True})
 
     @app.route('/api/scan', methods=['GET'])
     def api_scan():

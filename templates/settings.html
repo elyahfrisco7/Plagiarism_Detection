@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+
+{% block title %}Paramètres de pondération — ThesisPlag{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="badge">{{ icons.icon('settings', 14) }} Paramètres</div>
+    <h1>Pondération des critères de similarité</h1>
+    <p class="lede">
+      Ajustez l'importance de chaque critère dans le calcul du score global
+      (utilisé par <strong>Comparer</strong> et <strong>Scanner</strong>).
+      Par défaut, les 6 critères du schéma THLME-Gre pèsent autant les uns
+      que les autres (≈16,7 % chacun).
+    </p>
+  </div>
+</div>
+
+<div class="grid grid--split">
+  <section class="card">
+    <div class="card__header">
+      <span class="card__icon">{{ icons.icon('settings', 18) }}</span>
+      <div>
+        <h2 class="card__title">Pondération actuelle</h2>
+        <p class="card__subtitle">
+          {% if is_default %}
+            Valeurs par défaut (aucune personnalisation enregistrée).
+          {% else %}
+            Pondération personnalisée active.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    {% if saved %}
+    <p class="help" style="color: var(--ok); margin-bottom: 18px;">
+      {{ icons.icon('check', 14) }} Pondération enregistrée avec succès.
+    </p>
+    {% endif %}
+    {% if reset %}
+    <p class="help" style="color: var(--accent); margin-bottom: 18px;">
+      {{ icons.icon('reset', 14) }} Valeurs par défaut rétablies.
+    </p>
+    {% endif %}
+
+    <form id="weightsForm" action="{{ url_for('settings_save') }}" method="POST" novalidate>
+      <div class="form-section">
+        {% for c in criteria %}
+        {% set pct = (weights[c] * 100) %}
+        <div class="weight-row">
+          <div class="weight-row__label">
+            <span class="card__icon" style="width: 32px; height: 32px;">{{ icons.icon(crit_icons[c], 16) }}</span>
+            <span>{{ labels[c] }}</span>
+          </div>
+          <input
+            type="range"
+            class="weight-slider"
+            data-criterion="{{ c }}"
+            min="0"
+            max="100"
+            step="0.1"
+            value="{{ pct | round(1) }}"
+          />
+          <div class="weight-row__value">
+            <input
+              type="number"
+              class="weight-number"
+              name="{{ c }}"
+              data-criterion="{{ c }}"
+              min="0"
+              max="100"
+              step="0.1"
+              value="{{ pct | round(1) }}"
+            />
+            <span class="hint">%</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div id="weightSum" class="weight-sum">
+        Total : <span id="weightSumValue">100</span>%
+      </div>
+      <p class="hint" style="margin-top: 4px;">
+        Peu importe le total affiché : les valeurs sont automatiquement
+        normalisées à 100&nbsp;% lors de l'enregistrement.
+      </p>
+
+      <div class="actions" style="margin-top: 20px;">
+        <button class="btn btn-secondary" type="submit" name="action" value="reset">
+          {{ icons.icon('reset', 16) }} Réinitialiser aux valeurs par défaut
+        </button>
+        <button class="btn btn-primary" type="submit" name="action" value="save">
+          {{ icons.icon('check', 16) }} Enregistrer
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <aside class="card">
+    <div class="card__header">
+      <span class="card__icon">{{ icons.icon('chart', 18) }}</span>
+      <h3 class="card__title">À propos de la pondération</h3>
+    </div>
+    <p class="subtle">
+      Le score global de similarité est une moyenne pondérée des 6 critères :
+    </p>
+    <ul class="subtle" style="padding-left: 18px; line-height: 1.9;">
+      {% for c in criteria %}
+      <li>{{ icons.icon(crit_icons[c], 13) }} {{ labels[c] }}</li>
+      {% endfor %}
+    </ul>
+    <hr />
+    <p class="hint">
+      Un critère à 0&nbsp;% est ignoré dans le calcul. Augmenter le poids
+      d'un critère (ex. Images, pour mieux détecter le plagiat visuel)
+      réduit mécaniquement l'influence des autres.
+    </p>
+    <p class="hint">
+      Ce réglage s'applique immédiatement à toutes les comparaisons et scans
+      à venir — il ne modifie pas les scores déjà affichés ailleurs.
+    </p>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var sliders = Array.from(document.querySelectorAll(".weight-slider"));
+    var numbers = Array.from(document.querySelectorAll(".weight-number"));
+    var sumValueEl = document.getElementById("weightSumValue");
+    var sumBox = document.getElementById("weightSum");
+
+    function byCriterion(list, c) {
+      return list.find(function (el) {
+        return el.dataset.criterion === c;
+      });
+    }
+
+    function updateSum() {
+      var total = numbers.reduce(function (acc, el) {
+        return acc + (parseFloat(el.value) || 0);
+      }, 0);
+      sumValueEl.textContent = Math.round(total);
+      sumBox.classList.toggle("weight-sum--ok", Math.round(total) === 100);
+      sumBox.classList.toggle("weight-sum--warn", Math.round(total) !== 100);
+    }
+
+    sliders.forEach(function (slider) {
+      var number = byCriterion(numbers, slider.dataset.criterion);
+      slider.addEventListener("input", function () {
+        number.value = slider.value;
+        updateSum();
+      });
+    });
+    numbers.forEach(function (number) {
+      var slider = byCriterion(sliders, number.dataset.criterion);
+      number.addEventListener("input", function () {
+        var v = Math.max(0, Math.min(100, parseFloat(number.value) || 0));
+        slider.value = v;
+        updateSum();
+      });
+    });
+
+    updateSum();
+  })();
+</script>
+{% endblock %}

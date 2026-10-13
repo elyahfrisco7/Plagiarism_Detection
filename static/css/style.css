@@ -706,6 +706,25 @@ select option {
   color: var(--accent);
 }
 
+.btn-danger {
+  background: linear-gradient(180deg, var(--bad), #e04b4b);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(255, 122, 122, 0.3);
+}
+.btn-danger:hover:not(:disabled) {
+  box-shadow: 0 12px 26px rgba(255, 122, 122, 0.42);
+}
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--bad);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.btn-danger-ghost:hover:not(:disabled) {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+}
+
 .btn-ghost {
   background: var(--surface-2);
   color: var(--accent);
@@ -1090,6 +1109,84 @@ td.title-cell {
 }
 .criteria-table .icon {
   color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------------------------
+   Settings — pondération des critères
+   ------------------------------------------------------------------------ */
+.weight-row {
+  display: grid;
+  grid-template-columns: 190px 1fr 92px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.weight-row:last-child {
+  border-bottom: 0;
+}
+.weight-row__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+.weight-slider {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.weight-row__value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.weight-number {
+  width: 62px;
+  text-align: right;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+}
+.weight-number:focus {
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+  outline: none;
+}
+.weight-sum {
+  margin-top: 18px;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-align: center;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.weight-sum--ok {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.weight-sum--warn {
+  color: var(--warn);
+}
+@media (max-width: 640px) {
+  .weight-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .weight-row__value {
+    justify-content: flex-start;
+  }
 }
 
 /* ---------------------------------------------------------------------------

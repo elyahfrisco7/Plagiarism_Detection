@@ -60,6 +60,13 @@
               <a class="btn btn-ghost btn-sm" target="_blank" href="{{ url_for('uploaded_file', filename=t.pdf_path) }}">
                 {{ icons.icon('external', 14) }} PDF
               </a>
+              <button
+                class="btn btn-danger-ghost btn-sm"
+                type="button"
+                onclick='openDeleteModal({{ t.id }}, {{ t.title | tojson }}, this.closest("tr"))'
+              >
+                {{ icons.icon('trash', 14) }} Supprimer
+              </button>
             </div>
           </td>
         </tr>
@@ -95,6 +102,23 @@
   <button id="compareBtn" class="btn btn-primary btn-sm" onclick="goToCompare()" disabled>
     {{ icons.icon('arrow-right', 15) }} Comparer
   </button>
+</div>
+
+<!-- Modale de confirmation de suppression -->
+<div id="deleteModal" class="overlay">
+  <div class="card overlay__card">
+    <span class="card__icon" style="background: var(--bad-soft); color: var(--bad); margin: 0 auto 16px;">
+      {{ icons.icon('trash', 20) }}
+    </span>
+    <p class="overlay__title">Supprimer ce mémoire ?</p>
+    <p class="overlay__text" id="deleteModalText"></p>
+    <div class="actions" style="justify-content: center; margin-top: 22px;">
+      <button class="btn btn-secondary" type="button" id="deleteCancelBtn">Annuler</button>
+      <button class="btn btn-danger" type="button" id="deleteConfirmBtn">
+        {{ icons.icon('trash', 16) }} Supprimer définitivement
+      </button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -225,5 +249,67 @@
     if (checks.length !== 2) return;
     window.location.href = `/compare?id1=${checks[0].value}&id2=${checks[1].value}`;
   }
+
+  // --- Suppression d'un mémoire --------------------------------------------
+  const deleteModal = document.getElementById("deleteModal");
+  const deleteModalText = document.getElementById("deleteModalText");
+  const deleteCancelBtn = document.getElementById("deleteCancelBtn");
+  const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
+  let pendingDeleteId = null;
+  let pendingDeleteRow = null;
+
+  function openDeleteModal(id, title, row) {
+    pendingDeleteId = id;
+    pendingDeleteRow = row;
+    deleteModalText.textContent =
+      `« ${title} » sera supprimé définitivement, avec son fichier PDF et son index de recherche. Cette action est irréversible.`;
+    deleteModal.classList.add("is-visible");
+  }
+
+  function closeDeleteModal() {
+    deleteModal.classList.remove("is-visible");
+    pendingDeleteId = null;
+    pendingDeleteRow = null;
+  }
+
+  deleteCancelBtn.addEventListener("click", closeDeleteModal);
+  deleteModal.addEventListener("click", function (e) {
+    if (e.target === deleteModal) closeDeleteModal(); // clic en dehors de la carte
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && deleteModal.classList.contains("is-visible")) closeDeleteModal();
+  });
+
+  deleteConfirmBtn.addEventListener("click", async function () {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    const row = pendingDeleteRow;
+
+    deleteConfirmBtn.disabled = true;
+    deleteCancelBtn.disabled = true;
+    deleteConfirmBtn.textContent = "Suppression en cours…";
+
+    try {
+      const r = await fetch(`/api/theses/${id}`, { method: "DELETE" });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Échec de la suppression");
+
+      if (row) row.remove();
+      closeDeleteModal();
+
+      // Recalcule l'état de la barre de comparaison et affiche l'état vide
+      // si c'était le dernier mémoire de la liste.
+      updateCompareState();
+      if (document.querySelectorAll("tbody tr").length === 0) {
+        window.location.reload();
+      }
+    } catch (e) {
+      alert("Erreur lors de la suppression : " + e.message);
+    } finally {
+      deleteConfirmBtn.disabled = false;
+      deleteCancelBtn.disabled = false;
+      deleteConfirmBtn.innerHTML = '{{ icons.icon("trash", 16) }} Supprimer définitivement';
+    }
+  });
 </script>
 {% endblock %}

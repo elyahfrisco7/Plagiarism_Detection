@@ -2,3 +2,4 @@ venv/
 chroma_db/
 uploads/
 .env
+weights_config.json
