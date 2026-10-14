@@ -42,8 +42,8 @@ def compute_similarity_breakdown(thesis_a, thesis_b):
     images_emb_a = np.array(json.loads(thesis_a.images_embedding)) if thesis_a.images_embedding else np.zeros(EMBEDDING_DIM)
     images_emb_b = np.array(json.loads(thesis_b.images_embedding)) if thesis_b.images_embedding else np.zeros(EMBEDDING_DIM)
 
-    # Similarités par critère (0..1)
-    sims = {
+    # Similarités par critère, calculées en 0..1 (cosinus brut)...
+    sims_raw = {
         "theme":       compute_cosine_similarity(theme_emb_a, theme_emb_b),
         "stage":       compute_cosine_similarity(stage_emb_a, stage_emb_b),
         "methodology": compute_cosine_similarity(meth_emb_a,  meth_emb_b),
@@ -52,9 +52,16 @@ def compute_similarity_breakdown(thesis_a, thesis_b):
         "images":      compute_cosine_similarity(images_emb_a, images_emb_b),
     }
 
+    # ...puis converties en pourcentage (0..100) : tous les gabarits et API
+    # (compare.html, le scan de theses.html, le JSON de /compare et
+    # /api/scan) affichent "sims" en supposant déjà une échelle 0-100, comme
+    # "overall". Sans cette conversion, une similarité de 90 % s'affichait
+    # "0.9 %" au lieu de "90.0 %".
+    sims = {c: v * 100.0 for c, v in sims_raw.items()}
+
     # Moyenne pondérée (poids configurables, somme = 1) -> %
     weights = get_weights()
-    overall = sum(sims[c] * weights.get(c, 0.0) for c in sims) * 100.0
+    overall = sum(sims_raw[c] * weights.get(c, 0.0) for c in sims_raw) * 100.0
     return sims, overall
 
 def compute_global_similarity(thesis_a, thesis_b):
